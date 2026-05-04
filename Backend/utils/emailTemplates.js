@@ -361,7 +361,7 @@ const mentorApplicationTemplate = (fullName, email, expertise, experience) => `
       </div>
       
       <p style="margin-top: 1rem;">Please review this application in the admin panel.</p>
-      <a href="${process.env.ADMIN_URL || 'http://localhost:5174'}/mentors" class="btn">Review Application</a>
+      <a href="${process.env.ADMIN_URL || 'https://iodlearn-admin.vercel.app'}/mentors" class="btn">Review Application</a>
     </div>
     <div class="footer">
       <p>© 2026 Iodlearn. All rights reserved.</p>
@@ -439,7 +439,7 @@ const mentorApprovedTemplate = (fullName) => `
         <li>Conduct mentorship sessions</li>
         <li>Earn revenue from your courses</li>
       </ul>
-      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/mentor-dashboard" class="btn">Go to Mentor Dashboard</a>
+      <a href="${process.env.CLIENT_URL || 'https://iodlearn.vercel.app'}/mentor-dashboard" class="btn">Go to Mentor Dashboard</a>
     </div>
     <div class="footer">
       <p>© 2026 Iodlearn. All rights reserved.</p>

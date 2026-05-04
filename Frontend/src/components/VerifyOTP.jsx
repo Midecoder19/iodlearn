@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { CheckCircle2 } from "lucide-react";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
 
 const VerifyOTP = () => {
   const navigate = useNavigate();

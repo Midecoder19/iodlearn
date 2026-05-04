@@ -28,7 +28,7 @@ const initializePayment = async (email, amount, metadata) => {
         amount,
         currency: "NGN",
         metadata,
-        callback_url: `${process.env.CLIENT_BASE_URL || "http://localhost:5173"}/payment/callback`
+        callback_url: `${process.env.CLIENT_BASE_URL || "https://iodlearn.vercel.app"}/payment/callback`
       },
       {
         headers: {

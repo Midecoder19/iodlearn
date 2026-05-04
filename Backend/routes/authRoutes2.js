@@ -214,7 +214,7 @@ router.post('/forgot-password', validateForgotPassword, async (req, res) => {
     user.resetTokenExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    const resetLink = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    const resetLink = `${process.env.CLIENT_URL || 'https://iodlearn.vercel.app'}/reset-password/${resetToken}`;
     await sendMail({
       to: email,
       subject: 'Reset your password - Iodlearn',
