@@ -123,6 +123,73 @@ The backend is ready to run with `node index.js` once the environment variables 
 - Set `CLIENT_URL` and/or `CLIENT_BASE_URL` to your deployed frontend URL(s).
 - Protect any production credentials and do not commit `.env` files.
 
+## Vercel + Railway deployment
+
+This project is a monorepo with separate apps:
+
+- `Backend/` → backend API
+- `Frontend/` → main user-facing web app
+- `Admin/` → admin dashboard
+
+### Deploy backend to Railway
+
+1. Create a new Railway project.
+2. Connect your GitHub repo or deploy from the local repository.
+3. Set the root directory to `Backend`.
+4. Use `npm install` and `npm start` or `npm run dev` for development.
+5. Add Railway environment variables matching `Backend/.env.example` and the root README.
+6. Copy the Railway service URL (for example: `https://my-backend.up.railway.app`).
+
+Required backend env vars:
+
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `PAYSTACK_SECRET_KEY`
+- `BREVO_API_KEY`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `FROM_EMAIL`
+- `FROM_NAME`
+- `REDIS_URL`
+- `CLIENT_URL`
+- `CLIENT_BASE_URL`
+- `VITE_APP_GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_ID`
+
+### Deploy frontend to Vercel
+
+1. Create a new Vercel project.
+2. Select this GitHub repo.
+3. Set the root directory to `Frontend`.
+4. Set the build command to `npm run build`.
+5. Set the output directory to `dist`.
+6. Set environment variable:
+
+   - `VITE_API_BASE_URL` = your Railway backend URL + `/api`
+
+   Example:
+
+   ```text
+   VITE_API_BASE_URL=https://my-backend.up.railway.app/api
+   ```
+
+### Deploy admin panel to Vercel (optional)
+
+If you want the admin panel hosted separately:
+
+1. Create another Vercel project.
+2. Set the root directory to `Admin`.
+3. Use build command `npm run build` and output directory `dist`.
+4. Set the same env var:
+
+   - `VITE_API_BASE_URL=https://my-backend.up.railway.app/api`
+
+### Notes
+
+- The frontend uses `VITE_API_BASE_URL` to call the backend API.
+- `Frontend` and `Admin` are separate deploys if both should be live.
+- If your backend is only used by the frontend app, `CLIENT_URL` can be the Vercel frontend URL.
+
 ## GitHub remote
 
 This repository has been reset and pushed to `https://github.com/Midecoder19/iodlearn.git` with a fresh commit history.
