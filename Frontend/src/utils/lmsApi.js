@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com/api";
 
 const getAuthHeader = () => {
   const token = localStorage.getItem("token");
