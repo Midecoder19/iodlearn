@@ -21,7 +21,7 @@ const Header = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
 
   useEffect(() => {
     let ticking = false;

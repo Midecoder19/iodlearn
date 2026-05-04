@@ -6,7 +6,7 @@ import { SiLeetcode } from "react-icons/si";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
 
 const EditProfileModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
   const [formData, setFormData] = useState({

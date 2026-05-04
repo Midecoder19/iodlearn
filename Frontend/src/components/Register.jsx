@@ -9,7 +9,7 @@ import { AuthContext } from "../context/AuthContext";
 import { Eye, EyeOff, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
 
 const Register = () => {
   const [name, setName] = useState("");

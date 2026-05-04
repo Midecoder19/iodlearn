@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import CountUp from 'react-countup';
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
 
 const groupActivityByDate = (activity) => {
     if (!activity) return {};

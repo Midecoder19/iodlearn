@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import { progressAPI, courseAPI } from "../../utils/lmsApi";
 import toast from "react-hot-toast";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
 
 const UserProfile = () => {
   const { user, setUser, updateUser } = useContext(AuthContext);
