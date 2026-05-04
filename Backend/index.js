@@ -100,14 +100,18 @@ app.use((req, res, next) => {
 
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 const clientBaseUrl = process.env.CLIENT_BASE_URL || clientUrl;
+const adminUrl = process.env.ADMIN_URL || "http://localhost:5174";
 
 // Allow both main frontend and admin panel
 const allowedOrigins = [
-  clientUrl,
-  "http://localhost:5173", // Main frontend
-  "http://localhost:5174", // Admin panel
-  "http://localhost:5175", // Admin panel alternative
-  "http://localhost:5176", // Admin panel alternative
+  clientUrl, // Production frontend
+  adminUrl, // Production admin
+  "http://localhost:5173", // Main frontend dev
+  "http://localhost:5174", // Admin panel dev
+  "http://localhost:5175", // Admin panel alternative dev
+  "http://localhost:5176", // Admin panel alternative dev
+  "https://iodlearn.vercel.app", // Explicit production frontend
+  "https://iodlearn-admin.vercel.app", // Explicit production admin
 ];
 
 app.use(cors({
