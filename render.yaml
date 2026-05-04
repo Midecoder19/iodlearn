@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: iodlearn-backend
+    env: node
+    plan: free
+    region: oregon
+    branch: main
+    root: Backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    healthCheckPath: /health

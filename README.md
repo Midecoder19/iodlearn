@@ -131,6 +131,19 @@ This project is a monorepo with separate apps:
 - `Frontend/` → main user-facing web app
 - `Admin/` → admin dashboard
 
+### Deploy backend to Railway or Render
+
+This repo includes a `render.yaml` file for Render deployment.
+
+For Render, the backend service is configured to use the `Backend` subfolder as the service root.
+
+#### Backend service settings for Render
+
+- Root directory: `Backend`
+- Build command: `npm install && npm run build`
+- Start command: `npm start`
+- Health check path: `/health`
+
 ### Deploy backend to Railway
 
 1. Create a new Railway project.
