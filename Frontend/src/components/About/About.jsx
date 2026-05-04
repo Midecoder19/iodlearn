@@ -143,13 +143,13 @@ function About() {
               className="p-8 rounded-3xl bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 shadow-lg dark:bg-white/5 dark:from-white/5 dark:to-transparent dark:border-white/10"
             >
               <img
-                src="https://api.dicebear.com/7.x/initials/svg?seed=AK"
-                alt="Abhishek Kalme"
+                src="https://api.dicebear.com/7.x/initials/svg?seed=OJ"
+                alt="Opeyemi Jimoh"
                 className="w-28 h-28 mx-auto rounded-full mb-6 shadow-md border-4 border-white dark:border-white/10"
               />
-              <h3 className="text-2xl font-bold mb-1">Abhishek Kalme</h3>
+              <h3 className="text-2xl font-bold mb-1">Opeyemi Jimoh</h3>
               <p className="text-indigo-600 dark:text-indigo-300 font-medium mb-4">
-                Founder & Developer
+                Founder
               </p>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Passionate about building scalable solutions and solving real-world
