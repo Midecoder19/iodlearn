@@ -35,7 +35,7 @@ function App() {
 
           <CookieConsent
             location="bottom"
-            buttonText="Accept All"
+            buttonText="Accept Cookies"
             declineButtonText="Decline"
             cookieName="iodlearn-cookie-consent"
             style={{
@@ -63,13 +63,21 @@ function App() {
               padding: "10px 20px",
             }}
             expires={365}
+            onAccept={() => {
+              // Optional: Enable analytics or other cookies
+              console.log("Cookies accepted");
+            }}
+            onDecline={() => {
+              // Optional: Disable non-essential cookies
+              console.log("Cookies declined");
+            }}
           >
-            🍪 We use cookies to enhance your experience. By continuing to visit this site, you agree to our use of cookies.{" "}
+            🍪 This website uses cookies to improve your experience. By accepting, you agree to our use of cookies.{" "}
             <a
               href="/privacy-policy"
               style={{ color: "#fff", textDecoration: "underline" }}
             >
-              Learn more
+              Privacy Policy
             </a>
           </CookieConsent>
         </ThemeProvider>
