@@ -5,6 +5,7 @@ import { useLocation, Outlet } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import CookieConsent from "react-cookie-consent";
 
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -31,6 +32,46 @@ function App() {
             <Outlet />
             <Footer />
           </div>
+
+          <CookieConsent
+            location="bottom"
+            buttonText="Accept All"
+            declineButtonText="Decline"
+            cookieName="iodlearn-cookie-consent"
+            style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "#fff",
+              fontSize: "14px",
+              padding: "20px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            }}
+            buttonStyle={{
+              background: "#fff",
+              color: "#667eea",
+              fontSize: "14px",
+              fontWeight: "600",
+              borderRadius: "8px",
+              padding: "10px 20px",
+              margin: "0 10px",
+            }}
+            declineButtonStyle={{
+              background: "transparent",
+              color: "#fff",
+              fontSize: "14px",
+              border: "1px solid #fff",
+              borderRadius: "8px",
+              padding: "10px 20px",
+            }}
+            expires={365}
+          >
+            🍪 We use cookies to enhance your experience. By continuing to visit this site, you agree to our use of cookies.{" "}
+            <a
+              href="/privacy-policy"
+              style={{ color: "#fff", textDecoration: "underline" }}
+            >
+              Learn more
+            </a>
+          </CookieConsent>
         </ThemeProvider>
       </GoogleOAuthProvider>
     </>
