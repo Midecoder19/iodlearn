@@ -1,0 +1,12 @@
+{
+  "projectId": "iodlearn-admin",
+  "orgId": "org_kh7hxn9bq2t8q3m",
+  "settings": {
+    "framework": "vite",
+    "sourceFilesOutsideRoot": false,
+    "buildCommand": "npm run build",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install",
+    "outputDirectory": "dist"
+  }
+}
