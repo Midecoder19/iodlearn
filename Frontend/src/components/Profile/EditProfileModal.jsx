@@ -5,8 +5,9 @@ import { FaGithub, FaLinkedin, FaTwitter, FaInstagram, FaGlobe } from "react-ico
 import { SiLeetcode } from "react-icons/si";
 import { toast } from "react-hot-toast";
 import axios from "axios";
+import { BACKEND_BASE } from "../../utils/lmsApi";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+const Backurl = BACKEND_BASE;
 
 const EditProfileModal = ({ isOpen, onClose, currentUser, onUpdate }) => {
   const [formData, setFormData] = useState({

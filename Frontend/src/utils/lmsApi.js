@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const rawApiBase = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+export const BACKEND_BASE = rawApiBase.replace(/\/$/, "").replace(/\/api$/, "");
 const API_BASE = rawApiBase.replace(/\/$/, "").endsWith("/api")
   ? rawApiBase.replace(/\/$/, "")
   : `${rawApiBase.replace(/\/$/, "")}/api`;

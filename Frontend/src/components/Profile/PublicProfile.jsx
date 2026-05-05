@@ -12,8 +12,9 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip, Legend 
 } from 'recharts';
 import CountUp from 'react-countup';
+import { BACKEND_BASE } from "../../utils/lmsApi";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+const Backurl = BACKEND_BASE;
 
 const groupActivityByDate = (activity) => {
     if (!activity) return {};

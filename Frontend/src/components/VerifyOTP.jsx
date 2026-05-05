@@ -3,8 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { CheckCircle2 } from "lucide-react";
+import { BACKEND_BASE } from "../utils/lmsApi";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+const Backurl = BACKEND_BASE;
 
 const VerifyOTP = () => {
   const navigate = useNavigate();

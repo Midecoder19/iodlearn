@@ -7,10 +7,10 @@ import {
 } from "react-icons/fa";
 import EditProfileModal from "./EditProfileModal";
 import { Link } from "react-router-dom";
-import { progressAPI, courseAPI } from "../../utils/lmsApi";
+import { progressAPI, courseAPI, BACKEND_BASE } from "../../utils/lmsApi";
 import toast from "react-hot-toast";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+const Backurl = BACKEND_BASE;
 
 const UserProfile = () => {
   const { user, setUser, updateUser } = useContext(AuthContext);

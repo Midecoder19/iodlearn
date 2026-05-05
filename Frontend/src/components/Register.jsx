@@ -8,8 +8,9 @@ import { jwtDecode } from "jwt-decode";
 import { AuthContext } from "../context/AuthContext";
 import { Eye, EyeOff, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { BACKEND_BASE } from "../utils/lmsApi";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+const Backurl = BACKEND_BASE;
 
 const Register = () => {
   const [name, setName] = useState("");

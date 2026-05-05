@@ -10,8 +10,9 @@ import { GoogleLogin } from "@react-oauth/google";
 import { Eye, EyeOff, Hand } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import { motion } from "framer-motion";
+import { BACKEND_BASE } from "../utils/lmsApi";
 
-const Backurl = import.meta.env.VITE_API_BASE_URL || "https://iodlearn.onrender.com";
+const Backurl = BACKEND_BASE;
 
 const Login = () => {
   const { login } = useContext(AuthContext);

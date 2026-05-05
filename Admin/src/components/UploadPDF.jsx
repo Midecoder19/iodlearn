@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { Upload, FileText, BookOpen, GraduationCap, Layers, CheckCircle } from "lucide-react";
 import Breadcrumbs from "./Common/Breadcrumbs";
-import { API_BASE_URL } from "../config";
+import { BACKEND_BASE_URL } from "../config";
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -100,7 +100,7 @@ const UploadPDF = () => {
 
     try {
       await axios.post(
-        `${API_BASE_URL}/api/upload/upload?${queryParams}`,
+        `${BACKEND_BASE_URL}/api/upload/upload?${queryParams}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
