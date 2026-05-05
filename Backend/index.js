@@ -119,11 +119,13 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
-      return callback(new Error("Not allowed continueby CORS"));
+      return callback(new Error("CORS origin not allowed"));
     }
   },
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  maxAge: 86400
 }));
 
 app.get('/health', (req, res) => {
