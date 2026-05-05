@@ -142,6 +142,16 @@ app.use("/api/search", searchRoutes);
 app.use("/api/stats", require("./routes/statsRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 
+// ✅ Seed database endpoint (for initial deployment)
+app.get("/api/seed", async (req, res) => {
+  try {
+    require("./seed.js")();
+    res.json({ success: true, message: "Database seeded. Check server logs." });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Seed failed", error: err.message });
+  }
+});
+
 // New LMS Routes
 app.use("/api/courses", require("./routes/courseRoutes"));
 app.use("/api/payments", paymentLimiter, require("./routes/paymentRoutes"));
