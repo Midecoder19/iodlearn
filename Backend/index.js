@@ -141,6 +141,7 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/search", searchRoutes);
 app.use("/api/stats", require("./routes/statsRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
+app.use("/api/mentor-application", require("./routes/mentorApplicationRoutes"));
 
 // ✅ Seed database endpoint (for initial deployment)
 app.get("/api/seed", async (req, res) => {
@@ -205,6 +206,7 @@ app.get("/api/seed", async (req, res) => {
 app.use("/api/courses", require("./routes/courseRoutes"));
 app.use("/api/payments", paymentLimiter, require("./routes/paymentRoutes"));
 app.use("/api/progress", require("./routes/progressRoutes"));
+app.use("/api/mentorship", require("./routes/mentorshipRoutes"));
 
 // Socket.io setup
 const server = http.createServer(app);
