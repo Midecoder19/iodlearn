@@ -1,22 +1,28 @@
 let redisClient = null;
 
-const createClient = () => {
-  try {
-    const { createClient } = require("redis");
-    const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+  const createClient = () => {
+    try {
+      const { createClient } = require("redis");
+      const redisUrl = process.env.REDIS_URL;
+      
+      // If no Redis URL configured, return null (disable Redis)
+      if (!redisUrl) {
+        console.log("⚠️ Redis not configured - running without cache");
+        return null;
+      }
+      
+      redisClient = createClient({ url: redisUrl });
 
-    redisClient = createClient({ url: redisUrl });
+      redisClient.on("error", (err) => {
+        console.error("Redis Client Error:", err?.message || err);
+      });
 
-    redisClient.on("error", (err) => {
-      console.error("Redis Client Error:", err?.message || err);
-    });
-
-    return redisClient;
-  } catch (error) {
-    console.warn("Redis package not installed. Redis caching disabled.", error.message);
-    return null;
-  }
-};
+      return redisClient;
+    } catch (error) {
+      console.warn("Redis package not installed. Redis caching disabled.", error.message);
+      return null;
+    }
+  };
 
 const connectRedis = async () => {
   if (!redisClient) redisClient = createClient();

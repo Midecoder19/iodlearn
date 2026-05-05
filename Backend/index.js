@@ -38,7 +38,8 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 connectDB();
-connectRedis();
+// Redis connection - disabled for now, uncomment and configure for production
+// connectRedis();
 
 const app = express();
 
