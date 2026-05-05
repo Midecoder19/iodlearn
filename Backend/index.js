@@ -144,11 +144,60 @@ app.use("/api/categories", require("./routes/categoryRoutes"));
 
 // ✅ Seed database endpoint (for initial deployment)
 app.get("/api/seed", async (req, res) => {
+  const { spawn } = require("child_process");
+  const path = require("path");
+  
   try {
-    require("./seed.js")();
-    res.json({ success: true, message: "Database seeded. Check server logs." });
+    const seedProcess = spawn("node", [path.join(__dirname, "seed.js")], {
+      stdio: "pipe",
+      env: { ...process.env, NODE_ENV: process.env.NODE_ENV || "development" }
+    });
+    
+    let output = "";
+    let errorOutput = "";
+    
+    seedProcess.stdout.on("data", (data) => {
+      output += data.toString();
+    });
+    
+    seedProcess.stderr.on("data", (data) => {
+      errorOutput += data.toString();
+    });
+    
+    seedProcess.on("close", (code) => {
+      if (code === 0) {
+        console.log("Seed output:", output);
+        res.json({ 
+          success: true, 
+          message: "Database seeded successfully!",
+          output 
+        });
+      } else {
+        console.error("Seed error:", errorOutput);
+        res.status(500).json({ 
+          success: false, 
+          message: "Seed failed", 
+          error: errorOutput 
+        });
+      }
+    });
+    
+    seedProcess.on("error", (err) => {
+      console.error("Seed process error:", err);
+      res.status(500).json({ 
+        success: false, 
+        message: "Seed process failed", 
+        error: err.message 
+      });
+    });
+    
   } catch (err) {
-    res.status(500).json({ success: false, message: "Seed failed", error: err.message });
+    console.error("Seed endpoint error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: "Seed failed", 
+      error: err.message 
+    });
   }
 });
 
