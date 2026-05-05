@@ -8,7 +8,7 @@ import { BsSunFill, BsMoonFill } from "react-icons/bs";
 import { GraduationCap, Search, FileText, History, HelpCircle, Loader2 } from "lucide-react";
 import logoIcon from "../../../src/assets/logo.png";
 import axios from "axios";
-import { API_BASE } from "../../utils/lmsApi";
+import { BACKEND_BASE } from "../../utils/lmsApi";
 
 const Header = () => {
   const { user, logout } = useContext(AuthContext);
@@ -22,7 +22,7 @@ const Header = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const API_BASE_URL = API_BASE;
+  const API_BASE_URL = BACKEND_BASE;
 
   useEffect(() => {
     let ticking = false;
