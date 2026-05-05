@@ -78,192 +78,195 @@ const resetPasswordTemplate = (link, name = "User") => `
 </html>
 `;
 
-const otpHtmlTemplate = (otp, name = "User") => `
+const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.vercel.app/verify") => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Email Verification</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     body {
       font-family: 'Nunito', sans-serif;
-      background-color: #f9f9f9;
+      background-color: #f4f6fb;
       margin: 0;
       padding: 0;
     }
 
     .container {
-      max-width: 600px;
-      margin: auto;
-      background-color: #fff;
-      border-radius: 8px;
+      max-width: 680px;
+      margin: 32px auto;
+      border-radius: 24px;
       overflow: hidden;
+      box-shadow: 0 28px 80px rgba(31, 41, 55, 0.08);
+      background: linear-gradient(180deg, #ffffff 0%, #f7f8fb 100%);
     }
 
-    .header {
-      background-color: #365cce;
-      color: #fff;
-      padding: 1.5rem 1rem;
+    .top-bar {
+      padding: 2rem;
+      background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+      color: #ffffff;
       text-align: center;
     }
 
-    .header h2 {
+    .top-bar h2 {
       margin: 0;
-      font-size: 24px;
+      font-size: 28px;
+      letter-spacing: 0.02em;
     }
 
-    .sub-header {
-      font-size: 14px;
-      margin-top: 0.75rem;
+    .top-bar p {
+      margin: 0.75rem auto 0;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.9);
+      max-width: 520px;
     }
 
-    .verify-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin-top: 0.75rem;
-      text-transform: capitalize;
+    .body {
+      padding: 2rem;
+      color: #1f2937;
+      line-height: 1.7;
     }
 
-    .content {
-      padding: 1.5rem 1rem;
-      color: #4b5563;
+    .body h3 {
+      margin: 0 0 0.75rem;
+      font-size: 22px;
+      color: #111827;
     }
 
-    .content h4 {
-      color: #374151;
-      margin-bottom: 0.5rem;
+    .body p {
+      margin: 0 0 1rem;
+      font-size: 16px;
     }
 
-    .otp-container {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 1rem;
+    .otp-panel {
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      background: #eef2ff;
+      border-radius: 18px;
+      border: 1px solid rgba(79, 70, 229, 0.12);
+      text-align: center;
+    }
+
+    .otp-panel p {
+      margin: 0 0 1rem;
+      color: #4338ca;
+      font-size: 15px;
+      letter-spacing: 0.03em;
+    }
+
+    .otp-code {
+      display: inline-flex;
+      gap: 0.75rem;
       flex-wrap: wrap;
+      justify-content: center;
     }
 
     .otp-digit {
-    display: inline-block;
-    width: 2.5rem;
-    height: 2.5rem;
-    border: 1px solid #365cce;
-    border-radius: 0.25rem;
-    font-size: 20px;
-    font-weight: bold;
-    color: #365cce;
-    text-align: center;
-    line-height: 2.5rem; 
-    box-sizing: border-box;
-  }
+      width: 3.4rem;
+      height: 3.4rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(79, 70, 229, 0.2);
+      font-size: 22px;
+      font-weight: 700;
+      color: #312e81;
+      box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.08);
+    }
 
     .button {
       display: inline-block;
-      margin-top: 1.5rem;
-      background-color: #f97316;
-      color: #fff;
-      padding: 0.5rem 1.25rem;
-      border-radius: 6px;
+      margin-top: 1.75rem;
+      background-color: #4f46e5;
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: 999px;
       text-decoration: none;
-      font-weight: bold;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .note {
+      margin-top: 1.75rem;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .support {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(15, 23, 42, 0.05);
+    }
+
+    .support h4 {
+      margin: 0 0 0.5rem;
+      color: #111827;
+      font-size: 16px;
+    }
+
+    .support p {
+      margin: 0;
+      color: #4b5563;
       font-size: 14px;
     }
 
     .footer {
-      text-align: center;
+      padding: 1.5rem 2rem 2rem;
       font-size: 13px;
-      color: #7b8794;
-      padding: 1rem;
-    }
-
-    .contact {
-      background-color: #f3f4f6;
-      padding: 1.25rem;
+      color: #6b7280;
       text-align: center;
     }
 
-    .contact h1 {
-      font-size: 18px;
-      color: #365cce;
-      margin: 0 0 0.5rem;
-    }
-
-    .contact a {
-      display: block;
-      color: #4b5563;
+    .footer a {
+      color: #4f46e5;
       text-decoration: none;
-      margin-top: 0.25rem;
     }
 
-    .footer-bottom {
-      background-color: #365cce;
-      color: #fff;
-      text-align: center;
-      font-size: 12px;
-      padding: 10px;
-      border-radius: 0 0 8px 8px;
-    }
+    @media screen and (max-width: 600px) {
+      .container {
+        margin: 16px;
+      }
 
-    @media screen and (max-width: 480px) {
       .otp-digit {
-        width: 2.5rem;
-        height: 2.5rem;
-        font-size: 24px;
-      line-height: 3rem; 
-      }
-
-      .header h2 {
+        width: 2.8rem;
+        height: 2.8rem;
         font-size: 20px;
-      }
-
-      .verify-title {
-        font-size: 18px;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h2>Iodlearn</h2>
-      <div class="sub-header">THANKS FOR SIGNING UP!</div>
-      <div class="verify-title">Verify your email address</div>
+    <div class="top-bar">
+      <h2>Welcome to Iodlearn</h2>
+      <p>Your premium learning platform is ready. Secure your account with the code below.</p>
     </div>
-
-    <div class="content">
-      <h4>Hello ${name},</h4>
-      <p>Please use the following One Time Password (OTP):</p>
-      <div class="otp-container">
-        ${otp
-          .split("")
-          .map((digit) => `<div class="otp-digit">${digit}</div>`)
-          .join("")}
+    <div class="body">
+      <h3>Hi ${name},</h3>
+      <p>Thank you for joining Iodlearn. We just need to verify your email address before you can access your personalized learning dashboard.</p>
+      <div class="otp-panel">
+        <p>Your secure verification code</p>
+        <div class="otp-code">
+          ${otp.split("").map((digit) => `<div class="otp-digit">${digit}</div>`).join("")}
+        </div>
       </div>
-      <p style="margin-top: 1rem;">
-        This passcode will be valid for the next <strong>10 minutes</strong>.
-      </p>
-      <a href="#" class="button">Verify Email</a>
-      <p style="margin-top: 2rem;">
-        Thank you,<br />Iodlearn Team
-      </p>
+      <a href="${verifyLink}" class="button">Verify your account</a>
+      <p class="note">This code will expire in <strong>10 minutes</strong>. If the button above does not work, copy the code and paste it into the verification page.</p>
+      <div class="support">
+        <h4>Need help?</h4>
+        <p>If you did not create this account, you can safely ignore this email. Otherwise, contact us at <a href="mailto:iodlearn.com@gmail.com">iodlearn.com@gmail.com</a>.</p>
+      </div>
     </div>
-
     <div class="footer">
-      This email was sent from
-      <a href="mailto:iodlearn.com@gmail.com" style="color: #365cce;">iodlearn.com@gmail.com</a>
-    </div>
-
-    <div class="contact">
-      <h1>Get in touch</h1>
-      <a href="mailto:iodlearn.com@gmail.com">iodlearn.com@gmail.com</a>
-    </div>
-
-    <div class="footer-bottom">
-      © 2026 Iodlearn. All Rights Reserved.
+      © 2026 Iodlearn. All rights reserved.  |  Learn, grow, and achieve with confidence.
     </div>
   </div>
-
 </body>
 </html>
 `;

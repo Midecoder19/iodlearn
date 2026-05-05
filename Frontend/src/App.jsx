@@ -16,10 +16,15 @@ import ScrollToTop from "./components/Home/ScrollToTop.jsx";
 function App() {
   const location = useLocation();
 
+  const googleClientId = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID || "";
+  if (!googleClientId) {
+    console.warn("Missing VITE_APP_GOOGLE_CLIENT_ID. Set this environment variable in Vercel for Google login to work.");
+  }
+
   return (
     <>
       <Toaster position="top-center" />
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_APP_GOOGLE_CLIENT_ID}>
+      <GoogleOAuthProvider clientId={googleClientId}>
         <ThemeProvider>
           <LoadingBar />
 

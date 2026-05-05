@@ -2,7 +2,6 @@
 
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -10,9 +9,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { Eye, EyeOff, Hand } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import { motion } from "framer-motion";
-import { BACKEND_BASE } from "../utils/lmsApi";
-
-const Backurl = BACKEND_BASE;
+import { authAPI } from "../utils/lmsApi";
 
 const Login = () => {
   const { login } = useContext(AuthContext);
@@ -32,11 +29,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${Backurl}/api/auth/login`,
-        { email, password },
-        { withCredentials: true }
-      );
+      const response = await authAPI.login(email, password);
 
       login(response.data.user, response.data.token);
       toast.success("Login successful!");
@@ -56,13 +49,7 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
 
-      const response = await axios.post(
-        `${Backurl}/api/auth/google`,
-        {
-          credential: credentialResponse.credential,
-        },
-        { withCredentials: true }
-      );
+      const response = await authAPI.googleLogin(credentialResponse.credential);
 
       login(response.data.user, response.data.token);
       toast.success("Google account logged in!");

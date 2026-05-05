@@ -52,6 +52,8 @@ export const paymentAPI = {
 };
 
 export const authAPI = {
+  login: (email, password) => api.post("/auth/login", { email, password }),
+  googleLogin: (credential) => api.post("/auth/google", { credential }),
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
   resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }),
 };

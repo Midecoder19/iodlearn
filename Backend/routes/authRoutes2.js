@@ -6,6 +6,7 @@ const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { verifyToken } = require('../middleware/verifyToken');
 const { validateLogin, validateRegister, validateForgotPassword, validateResetPassword, validateUpdateProfile } = require('../middleware/validation');
+const { otpHtmlTemplate } = require('../utils/emailTemplates');
 const sendMail = require('../utils/sendMail');
 const { client: redisClient } = require('../config/redis');
 
@@ -81,10 +82,15 @@ router.post('/register', validateRegister, async (req, res) => {
     });
 
     await user.save();
+
+    const clientUrl = process.env.CLIENT_URL?.replace(/\/$/, '') || 'https://iodlearn.vercel.app';
+    const verifyLink = `${clientUrl}/verify`;
+
     await sendMail({
       to: email,
       subject: 'Verify your email - Iodlearn',
-      text: `Your verification code is ${otp}`
+      text: `Your verification code is ${otp}`,
+      html: otpHtmlTemplate(otp, name, verifyLink)
     });
 
     res.status(201).json({ message: 'Registration successful. Check your email for the verification code.' });
