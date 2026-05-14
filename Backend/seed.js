@@ -143,6 +143,7 @@ async function seedDemoCourses() {
         email: "admin@demo.com",
         password: hashedPassword,
         role: "admin",
+        verified: true,
         isMentorApproved: true,
         username: "admin",
         isPublic: true
@@ -157,6 +158,10 @@ async function seedDemoCourses() {
       }
       if (!admin.username) {
         admin.username = "admin";
+        updated = true;
+      }
+      if (!admin.verified) {
+        admin.verified = true;
         updated = true;
       }
       if (updated) {
@@ -174,6 +179,7 @@ async function seedDemoCourses() {
         email: "mentor@demo.com",
         password: mentorPassword,
         role: "mentor",
+        verified: true,
         isMentorApproved: true,
         username: "mentor",
         isPublic: true,
@@ -193,6 +199,10 @@ async function seedDemoCourses() {
       }
       if (!mentor.username) {
         mentor.username = "mentor";
+        updated = true;
+      }
+      if (!mentor.verified) {
+        mentor.verified = true;
         updated = true;
       }
       if (updated) {
@@ -219,6 +229,7 @@ async function seedDemoCourses() {
           password: hashedPassword,
           role: "student",
           username,
+          verified: true,
           isPublic: true
         });
         await student.save();
@@ -231,6 +242,10 @@ async function seedDemoCourses() {
         }
         if (!student.username) {
           student.username = await generateUsername(studentData.email);
+          updated = true;
+        }
+        if (!student.verified) {
+          student.verified = true;
           updated = true;
         }
         if (updated) {
