@@ -4,10 +4,12 @@ const User = require('../models/User');
 const Course = require('../models/Course');
 const Payment = require('../models/Payment');
 const MentorApplication = require('../models/MentorApplication');
+const Wallet = require('../models/Wallet');
 const { verifyAdmin } = require("../middleware/verifyToken");
 const { validateMongoId, validatePagination } = require("../middleware/validation");
 const sendMail = require("../utils/sendMail");
-const { mentorApprovedTemplate, mentorRejectedTemplate } = require("../utils/emailTemplates"); 
+const { mentorApprovedTemplate, mentorRejectedTemplate } = require("../utils/emailTemplates");
+const logger = require("../utils/logger"); 
 
 router.put('/users/:id/role', verifyAdmin, async (req, res) => {
   const { role } = req.body;
