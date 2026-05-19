@@ -7,6 +7,7 @@ import { API_BASE_URL } from "../config";
 
 const AdminCourseCreator = ({ onCourseCreated, editingCourse, onCourseUpdated }) => {
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState({ thumbnail: false, video: {}, pdf: {} });
   const [categories, setCategories] = useState([]);
   const [lessons, setLessons] = useState([]);
@@ -83,6 +84,20 @@ const AdminCourseCreator = ({ onCourseCreated, editingCourse, onCourseUpdated })
 
   const removeLesson = (index) => {
     setLessons(lessons.filter((_, i) => i !== index));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      thumbnail: "",
+      category: "",
+      level: "beginner",
+      price: 0,
+      isPaid: false,
+      isPublished: false
+    });
+    setLessons([]);
   };
 
   const handleSubmit = async (e) => {
