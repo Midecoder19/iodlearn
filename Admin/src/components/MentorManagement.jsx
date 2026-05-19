@@ -20,7 +20,7 @@ const MentorManagement = () => {
                     adminAPI.getMentors()
                 ]);
                 setApplications(appsRes.data || []);
-                setMentors(mentorsRes.data || []);
+                setMentors(mentorsRes.data.mentors || mentorsRes.data || []);
             } catch (err) {
                 toast.error("Failed to fetch data");
             } finally {

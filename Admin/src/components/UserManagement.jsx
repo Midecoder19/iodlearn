@@ -15,7 +15,7 @@ const UserManagement = () => {
         const fetchUsers = async () => {
             try {
                 const res = await adminAPI.getUsers();
-                setUsers(res.data);
+                setUsers(res.data.users || res.data || []);
             } catch (err) {
                 toast.error("Failed to fetch users");
             } finally {

@@ -15,7 +15,7 @@ const CourseManagement = () => {
         const fetchCourses = async () => {
             try {
                 const res = await adminAPI.getCourses();
-                setCourses(res.data || []);
+                setCourses(res.data.courses || res.data || []);
             } catch (err) {
                 toast.error("Failed to fetch courses");
             } finally {
