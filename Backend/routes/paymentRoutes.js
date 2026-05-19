@@ -107,10 +107,21 @@ router.post("/initialize", verifyToken, validatePayment, async (req, res) => {
     const amountInKobo = course.price * 100;
     const amountInNaira = course.price;
     
-    const commissionRate = course.mentor.mentorProfile?.commissionRate || course.commissionPercent || GLOBAL_COMMISSION_RATE;
-    const commissionAmount = Number(((amountInNaira * commissionRate) / 100).toFixed(2));
-    const tutorEarnings = Number((amountInNaira - commissionAmount).toFixed(2));
-    const platformEarnings = commissionAmount;
+    let commissionRate, commissionAmount, tutorEarnings, platformEarnings;
+
+    if (course.uploaded_by === "admin") {
+      // Admin uploaded course - 100% goes to admin
+      commissionRate = 0;
+      commissionAmount = 0;
+      tutorEarnings = 0;
+      platformEarnings = amountInNaira;
+    } else {
+      // Mentor uploaded course - apply commission split
+      commissionRate = course.mentor.mentorProfile?.commissionRate || course.commissionPercent || GLOBAL_COMMISSION_RATE;
+      commissionAmount = Number(((amountInNaira * commissionRate) / 100).toFixed(2));
+      tutorEarnings = Number((amountInNaira - commissionAmount).toFixed(2));
+      platformEarnings = commissionAmount;
+    }
 
     const transactionRef = `TXN_${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
 
@@ -118,6 +129,7 @@ router.post("/initialize", verifyToken, validatePayment, async (req, res) => {
       user: userId,
       course: courseId,
       mentor: course.mentor._id,
+      uploaded_by: course.uploaded_by,
       amount: amountInNaira,
       transactionRef,
       idempotencyKey,
@@ -225,17 +237,34 @@ router.post("/verify-callback", async (req, res) => {
       $addToSet: { enrolledStudents: payment.user }
     });
     
-    let wallet = await Wallet.findOne({ user: payment.mentor });
-    if (!wallet) {
-      wallet = new Wallet({ user: payment.mentor });
-      await wallet.save();
+    // Credit wallet based on uploaded_by
+    if (payment.uploaded_by === "admin") {
+      // Credit admin wallet with full amount
+      let adminWallet = await Wallet.findOne({ user: payment.mentor });
+      if (!adminWallet) {
+        adminWallet = new Wallet({ user: payment.mentor });
+        await adminWallet.save();
+      }
+      
+      await adminWallet.addEarning(
+        payment.platformEarnings,
+        `Admin course sale: ${payment.transactionRef}`,
+        payment._id
+      );
+    } else {
+      // Credit mentor wallet with their share
+      let wallet = await Wallet.findOne({ user: payment.mentor });
+      if (!wallet) {
+        wallet = new Wallet({ user: payment.mentor });
+        await wallet.save();
+      }
+      
+      await wallet.addEarning(
+        payment.tutorEarnings,
+        `Course sale: ${payment.transactionRef}`,
+        payment._id
+      );
     }
-    
-    await wallet.addEarning(
-      payment.tutorEarnings,
-      `Course sale: ${payment.transactionRef}`,
-      payment._id
-    );
     
     logger.payment("Webhook payment verified and credited", {
       transactionRef: payment.transactionRef,

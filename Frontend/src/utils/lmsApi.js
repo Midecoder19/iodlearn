@@ -49,6 +49,8 @@ export const paymentAPI = {
   verify: (reference, transactionRef) => api.post("/payments/verify", { reference, transactionRef }),
   history: () => api.get("/payments/history"),
   checkCoursePayment: (courseId) => api.get(`/payments/course/${courseId}`),
+  getMentorEarnings: () => api.get("/payments/mentor-earnings"),
+  withdraw: (amount, bankName, accountNumber, accountName) => api.post("/payments/withdraw", { amount, bankName, accountNumber, accountName }),
 };
 
 export const authAPI = {

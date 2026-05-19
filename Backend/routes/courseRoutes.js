@@ -11,8 +11,12 @@ const router = express.Router();
 router.post("/", verifyToken, validateCourse, async (req, res) => {
    try {
      const userId = req.user.id;
+     const user = await User.findById(userId);
 
      const { title, description, thumbnail, category, level, price = 0, isPaid = false } = req.body;
+
+     // Determine uploaded_by based on user role
+     const uploaded_by = user.role === "admin" ? "admin" : "mentor";
 
      const course = new Course({
        title,
@@ -23,6 +27,7 @@ router.post("/", verifyToken, validateCourse, async (req, res) => {
        price,
        isPaid,
        mentor: userId,
+       uploaded_by,
        isPublished: false,
        lessons: []
      });

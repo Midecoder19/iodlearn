@@ -84,8 +84,12 @@ export const adminAPI = {
   updateCourse: (id, data) => api.put(`/admin/courses/${id}`, data),
   deleteCourse: (id) => api.delete(`/admin/courses/${id}`),
   getMentorApplications: (status) => api.get("/admin/mentor-applications", { params: { status } }),
-  approveMentor: (id) => api.put(`/admin/mentor-applications/${id}/approve`),
+  approveMentor: (id, commissionRate) => api.put(`/admin/mentor-applications/${id}/approve`, { commissionRate }),
   rejectMentor: (id, adminNotes) => api.put(`/admin/mentor-applications/${id}/reject`, { adminNotes }),
+  getWallets: () => api.get("/admin/wallets"),
+  getWithdrawals: (status) => api.get("/admin/withdrawals", { params: { status } }),
+  processWithdrawal: (withdrawalId, action, adminNotes) => api.post(`/admin/withdrawals/${withdrawalId}/process`, { action, adminNotes }),
+  getRevenue: (params) => api.get("/admin/revenue", { params }),
 };
 
 export const messageAPI = {

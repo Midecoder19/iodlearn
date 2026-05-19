@@ -375,7 +375,7 @@ const mentorApplicationTemplate = (fullName, email, expertise, experience) => `
 </html>
 `;
 
-const mentorApprovedTemplate = (fullName) => `
+const mentorApprovedTemplate = (fullName, commissionRate = 10) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -412,6 +412,19 @@ const mentorApprovedTemplate = (fullName) => `
     .content {
       margin-top: 2rem;
     }
+    .commission-box {
+      background: #ecfdf5;
+      border: 2px solid #10b981;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      text-align: center;
+    }
+    .commission-rate {
+      font-size: 32px;
+      font-weight: bold;
+      color: #10b981;
+    }
     .btn {
       display: inline-block;
       padding: 12px 24px;
@@ -442,6 +455,15 @@ const mentorApprovedTemplate = (fullName) => `
         <li>Conduct mentorship sessions</li>
         <li>Earn revenue from your courses</li>
       </ul>
+      
+      <div class="commission-box">
+        <p style="margin: 0 0 0.5rem; color: #065f46;">Your Commission Rate</p>
+        <div class="commission-rate">${commissionRate}%</div>
+        <p style="margin: 0.5rem 0 0; color: #065f46; font-size: 14px;">
+          You keep ${(100 - commissionRate)}% of your course sales
+        </p>
+      </div>
+      
       <a href="${process.env.CLIENT_URL || 'https://iodlearn.vercel.app'}/mentor-dashboard" class="btn">Go to Mentor Dashboard</a>
     </div>
     <div class="footer">

@@ -4,6 +4,7 @@ const paymentSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   course: { type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true, index: true },
   mentor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
+  uploaded_by: { type: String, enum: ["admin", "mentor"], required: true },
   amount: { type: Number, required: true },
   currency: { type: String, default: "NGN" },
   transactionRef: { type: String, required: true, unique: true },

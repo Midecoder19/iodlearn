@@ -99,12 +99,12 @@ router.delete('/users/:id', verifyAdmin, validateMongoId, async (req, res) => {
 router.get('/stats', verifyAdmin, async (req, res) => {
   try {
     const [totalUsers, totalCourses, totalMentors, recentUsers, recentCourses, 
-           revenueStats, mentorStats, courseStats, paymentStats] = await Promise.all([
+           revenueStats, mentorStats, courseStats, paymentStats, adminWalletStats] = await Promise.all([
       User.countDocuments(),
       Course.countDocuments(),
       User.countDocuments({ role: "mentor", isMentorApproved: true }),
       User.find().sort({ createdAt: -1 }).limit(5).select("name email role createdAt"),
-      Course.find().sort({ createdAt: -1 }).limit(5).select("title mentor price isPublished createdAt"),
+      Course.find().sort({ createdAt: -1 }).limit(5).select("title mentor price isPublished createdAt uploaded_by"),
       Payment.aggregate([
         { $match: { paymentStatus: "success" } },
         {
@@ -112,7 +112,9 @@ router.get('/stats', verifyAdmin, async (req, res) => {
             _id: null,
             totalRevenue: { $sum: "$amount" },
             totalTransactions: { $sum: 1 },
-            avgTransaction: { $avg: "$amount" }
+            avgTransaction: { $avg: "$amount" },
+            totalAdminEarnings: { $sum: "$platformEarnings" },
+            totalMentorEarnings: { $sum: "$tutorEarnings" }
           }
         }
       ]),
@@ -130,6 +132,7 @@ router.get('/stats', verifyAdmin, async (req, res) => {
           $project: {
             name: 1,
             email: 1,
+            mentorProfile: 1,
             totalEarnings: { $sum: "$payments.tutorEarnings" },
             transactionCount: { $size: "$payments" }
           }
@@ -152,6 +155,7 @@ router.get('/stats', verifyAdmin, async (req, res) => {
             mentor: 1,
             price: 1,
             isPublished: 1,
+            uploaded_by: 1,
             totalSales: { $size: { $filter: { input: "$payments", cond: { $eq: ["$$this.paymentStatus", "success"] } } } },
             totalRevenue: { $sum: { $map: { input: { $filter: { input: "$payments", cond: { $eq: ["$$this.paymentStatus", "success"] } } }, in: "$$this.amount" } } }
           }
@@ -171,20 +175,44 @@ router.get('/stats', verifyAdmin, async (req, res) => {
                 $group: {
                   _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
                   revenue: { $sum: "$amount" },
+                  adminEarnings: { $sum: "$platformEarnings" },
+                  mentorEarnings: { $sum: "$tutorEarnings" },
                   count: { $sum: 1 }
                 }
               },
               { $sort: { "_id": 1 } },
               { $limit: 6 }
+            ],
+            byUploader: [
+              { $match: { paymentStatus: "success" } },
+              {
+                $group: {
+                  _id: "$uploaded_by",
+                  revenue: { $sum: "$amount" },
+                  count: { $sum: 1 }
+                }
+              }
             ]
+          }
+        }
+      ]),
+      Wallet.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalPendingBalance: { $sum: "$pendingBalance" },
+            totalAvailableBalance: { $sum: "$availableBalance" },
+            totalWithdrawn: { $sum: "$totalWithdrawn" }
           }
         }
       ])
     ]);
 
-    const revenueData = revenueStats[0] || { totalRevenue: 0, totalTransactions: 0, avgTransaction: 0 };
+    const revenueData = revenueStats[0] || { totalRevenue: 0, totalTransactions: 0, avgTransaction: 0, totalAdminEarnings: 0, totalMentorEarnings: 0 };
     const monthlyRevenue = paymentStats[0]?.monthlyRevenue || [];
     const statusBreakdown = paymentStats[0]?.statusBreakdown || [];
+    const byUploader = paymentStats[0]?.byUploader || [];
+    const walletStats = adminWalletStats[0] || { totalPendingBalance: 0, totalAvailableBalance: 0, totalWithdrawn: 0 };
 
     res.json({
       summary: {
@@ -200,8 +228,15 @@ router.get('/stats', verifyAdmin, async (req, res) => {
         total: revenueData.totalRevenue,
         transactions: revenueData.totalTransactions,
         average: revenueData.avgTransaction,
-        monthly: monthlyRevenue
+        adminEarnings: revenueData.totalAdminEarnings,
+        mentorEarnings: revenueData.totalMentorEarnings,
+        monthly: monthlyRevenue,
+        byUploader: byUploader.reduce((acc, curr) => {
+          acc[curr._id] = { revenue: curr.revenue, count: curr.count };
+          return acc;
+        }, {})
       },
+      wallet: walletStats,
       topMentors: mentorStats,
       topCourses: courseStats,
       paymentStatus: statusBreakdown.reduce((acc, curr) => {
@@ -236,6 +271,7 @@ router.put('/mentor-applications/:id/approve', verifyAdmin, async (req, res) => 
   try {
     const adminId = req.user.id;
     const applicationId = req.params.id;
+    const { commissionRate } = req.body;
 
     const application = await MentorApplication.findById(applicationId);
     if (!application) {
@@ -247,18 +283,21 @@ router.put('/mentor-applications/:id/approve', verifyAdmin, async (req, res) => 
     application.reviewedAt = new Date();
     await application.save();
 
+    const mentorProfile = {
+      bio: application.bio,
+      expertise: application.expertise,
+      experience: application.experience,
+      qualifications: application.qualifications,
+      linkedin: application.linkedin,
+      twitter: application.twitter,
+      portfolio: application.portfolio,
+      commissionRate: commissionRate || 10
+    };
+
     await User.findByIdAndUpdate(application.user, {
       role: "mentor",
       isMentorApproved: true,
-      mentorProfile: {
-        bio: application.bio,
-        expertise: application.expertise,
-        experience: application.experience,
-        qualifications: application.qualifications,
-        linkedin: application.linkedin,
-        twitter: application.twitter,
-        portfolio: application.portfolio
-      }
+      mentorProfile
     });
 
     // Send approval email to mentor
@@ -268,7 +307,7 @@ router.put('/mentor-applications/:id/approve', verifyAdmin, async (req, res) => 
         await sendMail({
           to: mentorUser.email,
           subject: "Your Mentor Application Has Been Approved!",
-          html: mentorApprovedTemplate(mentorUser.name || application.fullName)
+          html: mentorApprovedTemplate(mentorUser.name || application.fullName, commissionRate || 10)
         });
         console.log(`Approval email sent to mentor: ${mentorUser.email}`);
       } catch (emailErr) {
@@ -276,7 +315,7 @@ router.put('/mentor-applications/:id/approve', verifyAdmin, async (req, res) => 
       }
     }
 
-    res.json({ message: "Mentor application approved", application });
+    res.json({ message: "Mentor application approved", application, commissionRate: mentorProfile.commissionRate });
   } catch (err) {
     console.error("Approve application error:", err);
     res.status(500).json({ error: "Failed to approve application" });
@@ -454,6 +493,224 @@ router.delete('/courses/:id', verifyAdmin, async (req, res) => {
     res.status(200).json({ message: "Course deleted", course });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete course" });
+  }
+});
+
+router.get('/wallets', verifyAdmin, async (req, res) => {
+  try {
+    const wallets = await Wallet.find()
+      .populate("user", "name email role mentorProfile")
+      .sort({ "totalEarnings": -1 });
+
+    res.json(wallets);
+  } catch (err) {
+    console.error("Get wallets error:", err);
+    res.status(500).json({ message: "Failed to fetch wallets" });
+  }
+});
+
+router.get('/withdrawals', verifyAdmin, async (req, res) => {
+  try {
+    const { status } = req.query;
+    
+    const wallets = await Wallet.find({
+      "withdrawals.status": status || "pending"
+    })
+    .populate("user", "name email")
+    .sort({ "withdrawals.createdAt": -1 });
+
+    const allWithdrawals = [];
+    wallets.forEach(wallet => {
+      wallet.withdrawals.forEach(withdrawal => {
+        if (!status || withdrawal.status === status) {
+          allWithdrawals.push({
+            ...withdrawal.toObject(),
+            userName: wallet.user.name,
+            userEmail: wallet.user.email,
+            userId: wallet.user._id,
+            walletId: wallet._id
+          });
+        }
+      });
+    });
+
+    allWithdrawals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.json(allWithdrawals);
+  } catch (err) {
+    console.error("Get withdrawals error:", err);
+    res.status(500).json({ message: "Failed to fetch withdrawals" });
+  }
+});
+
+router.post('/withdrawals/:withdrawalId/process', verifyAdmin, async (req, res) => {
+  try {
+    const { withdrawalId } = req.params;
+    const { action, adminNotes } = req.body;
+    const adminId = req.user.id;
+
+    if (!["approve", "reject"].includes(action)) {
+      return res.status(400).json({ error: "Invalid action" });
+    }
+
+    const wallet = await Wallet.findOne({ "withdrawals._id": withdrawalId });
+    if (!wallet) {
+      return res.status(404).json({ error: "Withdrawal not found" });
+    }
+
+    if (action === "approve") {
+      await wallet.approveWithdrawal(withdrawalId, adminId);
+      
+      // Initiate Paystack transfer
+      const withdrawal = wallet.withdrawals.id(withdrawalId);
+      const user = await User.findById(wallet.user);
+      
+      if (user && withdrawal.bankDetails.accountNumber && withdrawal.bankDetails.bankName) {
+        try {
+          const axios = require("axios");
+          const transferResponse = await axios.post(
+            "https://api.paystack.co/transfer",
+            {
+              source: "balance",
+              amount: withdrawal.amount * 100, // Convert to kobo
+              recipient: withdrawal.bankDetails.recipient_code || withdrawal.bankDetails.accountNumber,
+              reason: `Withdrawal for ${user.name}`,
+              reference: `WTH_${withdrawalId}_${Date.now()}`
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+
+          withdrawal.transferReference = transferResponse.data.data.reference;
+          withdrawal.transferStatus = transferResponse.data.data.status;
+          await wallet.save();
+
+          logger.admin("Paystack transfer initiated", { withdrawalId, reference: withdrawal.transferReference });
+        } catch (transferErr) {
+          console.error("Paystack transfer error:", transferErr.response?.data || transferErr.message);
+          // Mark withdrawal as failed if transfer fails
+          withdrawal.status = "failed";
+          withdrawal.adminNotes = "Transfer failed: " + (transferErr.response?.data?.message || transferErr.message);
+          await wallet.save();
+        }
+      }
+    } else {
+      await wallet.rejectWithdrawal(withdrawalId, adminId, adminNotes);
+    }
+
+    res.json({ message: `Withdrawal ${action}d successfully` });
+  } catch (err) {
+    console.error("Process withdrawal error:", err);
+    res.status(500).json({ message: err.message || "Failed to process withdrawal" });
+  }
+});
+
+router.get('/revenue', verifyAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate, mentorId } = req.query;
+    
+    let matchQuery = { paymentStatus: "success" };
+    if (startDate || endDate) {
+      matchQuery.createdAt = {};
+      if (startDate) matchQuery.createdAt.$gte = new Date(startDate);
+      if (endDate) matchQuery.createdAt.$lte = new Date(endDate);
+    }
+    if (mentorId) matchQuery.mentor = mentorId;
+
+    const [totalRevenue, adminRevenue, mentorRevenue, transactions, byMentor, byCourse] = await Promise.all([
+      Payment.aggregate([
+        { $match: matchQuery },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]),
+      Payment.aggregate([
+        { $match: { ...matchQuery, uploaded_by: "admin" } },
+        { $group: { _id: null, total: { $sum: "$platformEarnings" } } }
+      ]),
+      Payment.aggregate([
+        { $match: { ...matchQuery, uploaded_by: "mentor" } },
+        { $group: { _id: null, total: { $sum: "$tutorEarnings" } } }
+      ]),
+      Payment.aggregate([
+        { $match: matchQuery },
+        { $group: { _id: null, count: { $sum: 1 } } }
+      ]),
+      Payment.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: "$mentor",
+            totalRevenue: { $sum: "$amount" },
+            mentorEarnings: { $sum: "$tutorEarnings" },
+            adminEarnings: { $sum: "$platformEarnings" },
+            transactionCount: { $sum: 1 }
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "_id",
+            foreignField: "_id",
+            as: "mentor"
+          }
+        },
+        { $unwind: "$mentor" },
+        {
+          $project: {
+            mentorName: "$mentor.name",
+            mentorEmail: "$mentor.email",
+            totalRevenue: 1,
+            mentorEarnings: 1,
+            adminEarnings: 1,
+            transactionCount: 1
+          }
+        },
+        { $sort: { totalRevenue: -1 } }
+      ]),
+      Payment.aggregate([
+        { $match: matchQuery },
+        {
+          $group: {
+            _id: "$course",
+            totalRevenue: { $sum: "$amount" },
+            salesCount: { $sum: 1 }
+          }
+        },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "_id",
+            foreignField: "_id",
+            as: "course"
+          }
+        },
+        { $unwind: "$course" },
+        {
+          $project: {
+            courseTitle: "$course.title",
+            uploadedBy: "$course.uploaded_by",
+            totalRevenue: 1,
+            salesCount: 1
+          }
+        },
+        { $sort: { totalRevenue: -1 } }
+      ])
+    ]);
+
+    res.json({
+      totalRevenue: totalRevenue[0]?.total || 0,
+      adminRevenue: adminRevenue[0]?.total || 0,
+      mentorRevenue: mentorRevenue[0]?.total || 0,
+      totalTransactions: transactions[0]?.count || 0,
+      byMentor,
+      byCourse
+    });
+  } catch (err) {
+    console.error("Get revenue error:", err);
+    res.status(500).json({ message: "Failed to fetch revenue data" });
   }
 });
 
