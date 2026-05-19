@@ -99,6 +99,10 @@ const Header = () => {
     { name: "Courses", path: "/courses" },
   ];
 
+  const mentorLinks = [
+    { name: "Mentor Dashboard", path: "/mentor" },
+  ];
+
   const secondaryLinks = [
     { name: "About", path: "/about" },
   ];
@@ -190,6 +194,20 @@ const Header = () => {
           <div className="hidden md:flex md:items-center">
             <nav className="flex items-center gap-1 lg:gap-2">
               {primaryLinks.map((item) => (
+                <NavLink
+                  key={item.name}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+                      ? "text-indigo-600 bg-indigo-50/50 dark:text-indigo-300 dark:bg-white/5"
+                      : "text-gray-600 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5"
+                    }`
+                  }
+                >
+                  {item.name}
+                </NavLink>
+              ))}
+              {user?.role === "mentor" && mentorLinks.map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.path}
@@ -407,7 +425,7 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
-              {[...primaryLinks, ...secondaryLinks].map(
+              {[...primaryLinks, ...(user?.role === "mentor" ? mentorLinks : []), ...secondaryLinks].map(
                 (item) => (
                   <NavLink
                     key={item.name}
