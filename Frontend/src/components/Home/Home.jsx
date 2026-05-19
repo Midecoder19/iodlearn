@@ -7,6 +7,7 @@ import { ThemeContext } from "../../context/ThemeContext";
 import toast from "react-hot-toast";
 import { courseAPI } from "../../utils/lmsApi";
 import BlurFade from "../ui/BlurFade";
+import SEO from "../SEO";
 import {
   GraduationCap,
   BookOpen,
@@ -47,6 +48,12 @@ function Home() {
 
   return (
     <div className="relative">
+      <SEO 
+        title="Home"
+        description="Iodlearn - Your gateway to online learning. Discover expert-led courses in programming, web development, data science, and more. Start your learning journey today."
+        keywords="online learning, courses, programming, web development, data science, mentorship, education"
+        ogUrl="https://iodlearn.vercel.app/"
+      />
       <main className="relative z-10 text-gray-900 dark:text-white overflow-hidden">
         {/* ================= HERO ================= */}
         <section className="relative max-w-7xl mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-32">

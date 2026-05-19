@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Filter, BookOpen, Users, Star } from "lucide-react";
 import { courseAPI } from "../../utils/lmsApi";
 import CourseCard from "./CourseCard";
+import SEO from "../SEO";
 import toast from "react-hot-toast";
 
 const CoursesPage = () => {
@@ -39,6 +40,12 @@ const CoursesPage = () => {
 
     return (
         <div className="min-h-screen py-12 px-4">
+            <SEO 
+                title="Courses"
+                description="Browse our comprehensive collection of online courses. Learn programming, web development, data science, mobile development, design, and more from expert mentors."
+                keywords="online courses, programming courses, web development, data science, mobile development, design courses, business courses"
+                ogUrl="https://iodlearn.vercel.app/courses"
+            />
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
