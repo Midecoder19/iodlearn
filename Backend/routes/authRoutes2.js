@@ -76,7 +76,7 @@ router.post('/register', validateRegister, async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: role || 'student', // Default to student if not specified
+      role: 'student', // Always start as student, role changes after mentor approval
       verified: false,
       otp,
       otpExpires: Date.now() + 10 * 60 * 1000

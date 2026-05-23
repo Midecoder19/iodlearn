@@ -73,6 +73,9 @@ const Register = () => {
         { withCredentials: true }
       );
 
+      // Store intended role in localStorage as backup
+      localStorage.setItem('intendedRole', selectedRole);
+      
       toast.success("OTP sent to your email");
       navigate("/verify-otp", { state: { email, role: selectedRole } });
     } catch (err) {

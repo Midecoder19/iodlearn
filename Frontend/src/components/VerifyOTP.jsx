@@ -11,7 +11,7 @@ const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
-  const role = location.state?.role || 'student';
+  const role = location.state?.role || localStorage.getItem('intendedRole') || 'student';
 
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
@@ -28,7 +28,11 @@ const VerifyOTP = () => {
       toast.error("Email not found. Please register again.");
       navigate("/register");
     }
-  }, [email]);
+    // Log role for debugging
+    console.log("VerifyOTP - Role from state:", location.state?.role);
+    console.log("VerifyOTP - Role from localStorage:", localStorage.getItem('intendedRole'));
+    console.log("VerifyOTP - Final role:", role);
+  }, [email, role]);
 
   // Auto focus on first OTP box
   useEffect(() => {
@@ -104,14 +108,26 @@ const VerifyOTP = () => {
 
       toast.success(res.data.message || "Verified successfully");
       
+      console.log("Verification successful, role:", role);
+      
+      // Clear localStorage after use
+      localStorage.removeItem('intendedRole');
+      
       // Redirect based on role
       if (role === 'mentor') {
         toast.success("Please complete your mentor application");
-        setTimeout(() => navigate("/become-mentor"), 2000);
+        setTimeout(() => {
+          console.log("Redirecting to /become-mentor");
+          navigate("/become-mentor");
+        }, 2000);
       } else {
-        setTimeout(() => navigate("/login"), 2000);
+        setTimeout(() => {
+          console.log("Redirecting to /login");
+          navigate("/login");
+        }, 2000);
       }
     } catch (err) {
+      console.error("Verification error:", err);
       toast.error(err.response?.data?.message || "OTP verification failed");
     } finally {
       setLoading(false);

@@ -85,7 +85,7 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Email Verification</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
     body {
       font-family: 'Nunito', sans-serif;
@@ -104,7 +104,7 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
     }
 
     .top-bar {
-      padding: 2rem;
+      padding: 2.5rem 2rem;
       background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
       color: #ffffff;
       text-align: center;
@@ -112,102 +112,121 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
 
     .top-bar h2 {
       margin: 0;
-      font-size: 28px;
+      font-size: 32px;
       letter-spacing: 0.02em;
+      font-weight: 800;
     }
 
     .top-bar p {
       margin: 0.75rem auto 0;
-      font-size: 15px;
-      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.95);
       max-width: 520px;
+      line-height: 1.5;
     }
 
     .body {
-      padding: 2rem;
+      padding: 2.5rem 2rem;
       color: #1f2937;
       line-height: 1.7;
     }
 
     .body h3 {
-      margin: 0 0 0.75rem;
-      font-size: 22px;
+      margin: 0 0 1rem;
+      font-size: 24px;
       color: #111827;
+      font-weight: 700;
     }
 
     .body p {
-      margin: 0 0 1rem;
+      margin: 0 0 1.25rem;
       font-size: 16px;
+      color: #374151;
     }
 
     .otp-panel {
-      margin: 1.5rem 0;
-      padding: 1.5rem;
-      background: #eef2ff;
-      border-radius: 18px;
-      border: 1px solid rgba(79, 70, 229, 0.12);
+      margin: 2rem 0;
+      padding: 2rem;
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      border-radius: 20px;
+      border: 2px solid rgba(79, 70, 229, 0.2);
       text-align: center;
     }
 
     .otp-panel p {
-      margin: 0 0 1rem;
+      margin: 0 0 1.5rem;
       color: #4338ca;
-      font-size: 15px;
+      font-size: 16px;
+      font-weight: 600;
       letter-spacing: 0.03em;
+      text-transform: uppercase;
     }
 
     .otp-code {
       display: inline-flex;
-      gap: 0.5rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
       justify-content: center;
     }
 
     .otp-digit {
-      width: 2.4rem;
-      height: 3.4rem;
+      width: 3rem;
+      height: 4rem;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 16px;
       background: #ffffff;
-      border: 1px solid rgba(79, 70, 229, 0.2);
-      font-size: 22px;
-      font-weight: 700;
+      border: 2px solid rgba(79, 70, 229, 0.3);
+      font-size: 28px;
+      font-weight: 800;
       color: #312e81;
-      box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.08);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+      transition: transform 0.2s ease;
+    }
+
+    .otp-code-large {
+      font-size: 48px;
+      font-weight: 800;
+      color: #4f46e5;
+      letter-spacing: 0.5rem;
+      text-align: center;
+      margin: 1.5rem 0;
     }
 
     .button {
       display: inline-block;
-      margin-top: 1.75rem;
+      margin-top: 2rem;
       background-color: #4f46e5;
       color: #ffffff;
-      padding: 14px 28px;
+      padding: 16px 32px;
       border-radius: 999px;
       text-decoration: none;
       font-weight: 700;
       font-size: 16px;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
     }
 
     .note {
-      margin-top: 1.75rem;
+      margin-top: 2rem;
       font-size: 14px;
       color: #6b7280;
+      line-height: 1.6;
     }
 
     .support {
-      margin-top: 2rem;
-      padding: 1.5rem;
+      margin-top: 2.5rem;
+      padding: 1.75rem;
       border-radius: 16px;
       background: #ffffff;
-      border: 1px solid rgba(15, 23, 42, 0.05);
+      border: 1px solid rgba(15, 23, 42, 0.08);
     }
 
     .support h4 {
-      margin: 0 0 0.5rem;
+      margin: 0 0 0.75rem;
       color: #111827;
       font-size: 16px;
+      font-weight: 700;
     }
 
     .support p {
@@ -217,15 +236,17 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
     }
 
     .footer {
-      padding: 1.5rem 2rem 2rem;
+      padding: 2rem 2rem 2.5rem;
       font-size: 13px;
       color: #6b7280;
       text-align: center;
+      border-top: 1px solid rgba(15, 23, 42, 0.05);
     }
 
     .footer a {
       color: #4f46e5;
       text-decoration: none;
+      font-weight: 600;
     }
 
     @media screen and (max-width: 600px) {
@@ -233,10 +254,26 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
         margin: 16px;
       }
 
+      .top-bar {
+        padding: 2rem 1.5rem;
+      }
+
+      .top-bar h2 {
+        font-size: 26px;
+      }
+
+      .body {
+        padding: 2rem 1.5rem;
+      }
+
       .otp-digit {
         width: 2.8rem;
-        height: 2.8rem;
-        font-size: 20px;
+        height: 3.6rem;
+        font-size: 24px;
+      }
+
+      .otp-code-large {
+        font-size: 36px;
       }
     }
   </style>
@@ -245,26 +282,32 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
   <div class="container">
     <div class="top-bar">
       <h2>Welcome to Iodlearn</h2>
-      <p>Your premium learning platform is ready. Secure your account with the code below.</p>
+      <p>Your premium learning platform is ready. Secure your account with the verification code below.</p>
     </div>
     <div class="body">
       <h3>Hi ${name},</h3>
       <p>Thank you for joining Iodlearn. We just need to verify your email address before you can access your personalized learning dashboard.</p>
+      
       <div class="otp-panel">
-        <p>Your secure verification code</p>
+        <p>Your Verification Code</p>
         <div class="otp-code">
           ${otp.split("").map((digit) => `<div class="otp-digit">${digit}</div>`).join("")}
         </div>
       </div>
+      
+      <p style="text-align: center; margin: 1.5rem 0; color: #6b7280; font-size: 14px;">Or use this code:</p>
+      <div class="otp-code-large">${otp}</div>
+      
       <a href="${verifyLink}" class="button">Verify your account</a>
       <p class="note">This code will expire in <strong>10 minutes</strong>. If the button above does not work, copy the code and paste it into the verification page.</p>
+      
       <div class="support">
         <h4>Need help?</h4>
         <p>If you did not create this account, you can safely ignore this email. Otherwise, contact us at <a href="mailto:iodlearn.com@gmail.com">iodlearn.com@gmail.com</a>.</p>
       </div>
     </div>
     <div class="footer">
-      © 2026 Iodlearn. All rights reserved.  |  Learn, grow, and achieve with confidence.
+      © 2026 Iodlearn. All rights reserved. | Learn, grow, and achieve with confidence.
     </div>
   </div>
 </body>
