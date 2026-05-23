@@ -125,7 +125,7 @@ const VerifyOTP = () => {
         setBlocked(true);
         const unblockAt = Date.now() + 10 * 60 * 1000;
         setBlockedUntil(unblockAt);
-        toast.error("You’ve reached the maximum OTP resend limit. Please try again after 10 minutes.");
+        toast.error("You've reached the maximum OTP resend limit. Please try again after 10 minutes.");
       }
       return;
     }
@@ -146,6 +146,11 @@ const VerifyOTP = () => {
       const msg = err.response?.data?.message || "Failed to resend OTP";
       toast.error(msg);
 
+      // If user is already verified, redirect to login
+      if (err.response?.status === 400 && msg.includes('already verified')) {
+        setTimeout(() => navigate("/login"), 2000);
+      }
+
       if (err.response?.status === 403) {
         setBlocked(true);
         const unblockAt = err.response?.data?.unblockAt;
@@ -160,26 +165,28 @@ const VerifyOTP = () => {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-violet-200 dark:from-gray-900 dark:to-gray-800 px-3">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-violet-200 dark:from-gray-900 dark:to-gray-800 px-4 py-8">
 
-      <div className="max-w-md w-full bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 animate-fade-in mb-44">
-        <h2 className="text-center text-2xl font-bold text-gray-800 dark:text-white mb-6">
+      <div className="max-w-md w-full bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 animate-fade-in">
+        <h2 className="text-center text-2xl font-bold text-gray-800 dark:text-white mb-2">
           Email Verification
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-6 text-center">
           Enter the 6-digit OTP sent to{" "}
-          <span className="font-semibold">{email}</span>.
+          <span className="font-semibold">{email}</span>
         </p>
 
         {blocked && unblockCountdown > 0 && (
-          <p className="text-center text-sm text-yellow-500 mb-4">
-            OTP resend limit reached. You can try again in:{" "}
-            {Math.floor(unblockCountdown / 60)}m {unblockCountdown % 60}s
-          </p>
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+            <p className="text-center text-sm text-yellow-700 dark:text-yellow-300">
+              OTP resend limit reached. You can try again in:{" "}
+              {Math.floor(unblockCountdown / 60)}m {unblockCountdown % 60}s
+            </p>
+          </div>
         )}
 
         <form onSubmit={handleOTPVerify}>
-          <div className="flex justify-between mb-6">
+          <div className="flex justify-center gap-2 mb-6">
             {otpDigits.map((digit, idx) => (
               <input
                 key={idx}
@@ -191,12 +198,13 @@ const VerifyOTP = () => {
                 onChange={(e) => handleChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 disabled={blocked}
-                className={`w-12 h-12 text-center text-xl border border-gray-300 dark:border-gray-600 rounded-md 
-                  focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:text-white 
+                className={`w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 dark:border-gray-600 rounded-lg 
+                  focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-800 dark:text-white 
+                  transition-all duration-200
                   ${
                     blocked
-                      ? "bg-gray-200 dark:bg-gray-700 cursor-not-allowed"
-                      : ""
+                      ? "bg-gray-200 dark:bg-gray-700 cursor-not-allowed opacity-50"
+                      : "hover:border-indigo-400"
                   }`}
               />
             ))}
@@ -204,20 +212,28 @@ const VerifyOTP = () => {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || blocked}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? "Verifying..." : "Verify OTP"}
+            {loading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              "Verify OTP"
+            )}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <button
             onClick={handleResendOTP}
+            disabled={timer > 0 || resending || blocked || resendCount >= 3}
             className={`text-sm font-medium transition duration-200 ${
               timer > 0 || resending || blocked || resendCount >= 3
                 ? "text-gray-400 cursor-not-allowed"
-                : "text-indigo-500 hover:underline"
+                : "text-indigo-600 hover:text-indigo-700 hover:underline"
             }`}
           >
             {resending
@@ -227,9 +243,18 @@ const VerifyOTP = () => {
               : "Resend OTP"}
           </button>
 
-          <p className="text-sm mt-3 text-gray-600 dark:text-gray-300 text-center mb-4">
-            Resent: {resendCount} of 3
+          <p className="text-xs mt-2 text-gray-500 dark:text-gray-400 text-center">
+            Resend attempts: {resendCount} of 3
           </p>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+          <button
+            onClick={() => navigate("/register")}
+            className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+          >
+            ← Back to Register
+          </button>
         </div>
       </div>
     </div>
