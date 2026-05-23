@@ -11,6 +11,7 @@ const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
+  const role = location.state?.role || 'student';
 
   const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
@@ -102,7 +103,14 @@ const VerifyOTP = () => {
       });
 
       toast.success(res.data.message || "Verified successfully");
-      setTimeout(() => navigate("/login"), 2000);
+      
+      // Redirect based on role
+      if (role === 'mentor') {
+        toast.success("Please complete your mentor application");
+        setTimeout(() => navigate("/become-mentor"), 2000);
+      } else {
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "OTP verification failed");
     } finally {

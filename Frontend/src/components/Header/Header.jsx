@@ -462,6 +462,23 @@ const Header = () => {
               )}
 
               <div className="pt-2 border-t border-white/5 flex flex-col gap-2">
+                {/* Profile link for logged in users */}
+                {isLoggedIn && (
+                  <NavLink
+                    to="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2 rounded-md transition-all ${isActive
+                        ? "text-indigo-600 bg-white/5"
+                        : "text-gray-200 hover:text-white hover:bg-white/5"
+                      }`
+                    }
+                  >
+                    <User size={16} />
+                    <span>My Profile</span>
+                  </NavLink>
+                )}
+                
                 {/* Theme toggle inside mobile menu as well (redundant but useful) */}
                 <button
                   onClick={toggleTheme}

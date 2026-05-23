@@ -47,10 +47,16 @@ const MentorManagement = () => {
             setShowApplicationModal(false);
             setSelectedApplication(null);
             // Refresh mentors list
-            const mentorsRes = await adminAPI.getMentors();
-            setMentors(mentorsRes.data || []);
+            try {
+                const mentorsRes = await adminAPI.getMentors();
+                setMentors(mentorsRes.data.mentors || mentorsRes.data || []);
+            } catch (refreshErr) {
+                console.error("Failed to refresh mentors list:", refreshErr);
+                // Don't show error to user since approval succeeded
+            }
         } catch (err) {
-            toast.error("Failed to approve mentor");
+            console.error("Approval error:", err);
+            toast.error(err.response?.data?.error || "Failed to approve mentor");
         }
     };
 

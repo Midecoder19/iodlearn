@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext } from "../context/AuthContext";
-import { Eye, EyeOff, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Sparkles, User, GraduationCap } from "lucide-react";
 import { motion } from "framer-motion";
 import { BACKEND_BASE } from "../utils/lmsApi";
 
@@ -20,6 +20,7 @@ const Register = () => {
   const [passwordStrength, setPasswordStrength] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("student"); // student or mentor
   const MAX_NAME_LENGTH = 30;
   const MIN_NAME_LENGTH = 3;
   const { login } = useContext(AuthContext);
@@ -68,12 +69,12 @@ const Register = () => {
     try {
       const res = await axios.post(
         `${Backurl}/api/auth/register`,
-        { name, email, password },
+        { name, email, password, role: selectedRole },
         { withCredentials: true }
       );
 
       toast.success("OTP sent to your email");
-      navigate("/verify-otp", { state: { email } });
+      navigate("/verify-otp", { state: { email, role: selectedRole } });
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed.");
     } finally {
@@ -141,6 +142,49 @@ const Register = () => {
             />
             <div className={`mt-1 flex justify-between text-xs ${name.length > 0 && name.length < MIN_NAME_LENGTH ? "text-red-500" : "text-gray-400"}`}>
               {name.length > 0 && name.length < MIN_NAME_LENGTH && <span>Min {MIN_NAME_LENGTH} chars required</span>}
+            </div>
+          </div>
+
+          {/* ROLE SELECTION */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">
+              I want to join as
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedRole("student")}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  selectedRole === "student"
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/20"
+                    : "border-gray-200 dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500"
+                }`}
+              >
+                <User size={24} className={selectedRole === "student" ? "text-indigo-600" : "text-gray-400"} />
+                <span className={`font-medium ${selectedRole === "student" ? "text-indigo-600" : "text-gray-600 dark:text-gray-300"}`}>
+                  Student
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  Learn from courses
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedRole("mentor")}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  selectedRole === "mentor"
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/20"
+                    : "border-gray-200 dark:border-white/10 hover:border-indigo-300 dark:hover:border-indigo-500"
+                }`}
+              >
+                <GraduationCap size={24} className={selectedRole === "mentor" ? "text-indigo-600" : "text-gray-400"} />
+                <span className={`font-medium ${selectedRole === "mentor" ? "text-indigo-600" : "text-gray-600 dark:text-gray-300"}`}>
+                  Mentor
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  Teach & earn
+                </span>
+              </button>
             </div>
           </div>
 
