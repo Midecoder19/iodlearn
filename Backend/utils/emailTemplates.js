@@ -158,13 +158,13 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
 
     .otp-code {
       display: inline-flex;
-      gap: 0.75rem;
+      gap: 0.5rem;
       flex-wrap: wrap;
       justify-content: center;
     }
 
     .otp-digit {
-      width: 3.4rem;
+      width: 2.4rem;
       height: 3.4rem;
       display: inline-flex;
       align-items: center;
