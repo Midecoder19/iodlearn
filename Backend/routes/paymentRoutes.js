@@ -280,11 +280,17 @@ router.post("/verify-callback", async (req, res) => {
 });
 
 router.post("/verify", verifyToken, async (req, res) => {
+  const session = await Payment.startSession();
+  
   try {
+    session.startTransaction();
     const { reference, transactionRef } = req.body;
     const userId = req.user.id;
 
     if (!reference && !transactionRef) {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       return res.status(400).json({ message: "Reference or transactionRef required" });
     }
 
@@ -292,12 +298,18 @@ router.post("/verify", verifyToken, async (req, res) => {
       ? { transactionRef, user: userId }
       : { paystackRef: reference, user: userId };
 
-    const payment = await Payment.findOne(query);
+    const payment = await Payment.findOne(query).session(session);
     if (!payment) {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       return res.status(404).json({ message: "Payment record not found" });
     }
 
     if (payment.paymentStatus === "success") {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       const course = await Course.findById(payment.course);
       return res.json({ 
         message: "Payment already verified", 
@@ -307,6 +319,9 @@ router.post("/verify", verifyToken, async (req, res) => {
     }
 
     if (payment.paymentStatus === "failed") {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       return res.status(400).json({ message: "Payment failed" });
     }
 
@@ -334,8 +349,13 @@ router.post("/verify", verifyToken, async (req, res) => {
       res.status(400).json({ message: "Payment verification failed" });
     }
   } catch (err) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     logger.error("Payment verification failed", { error: err.message });
     res.status(500).json({ message: "Failed to verify payment" });
+  } finally {
+    session.endSession();
   }
 });
 
