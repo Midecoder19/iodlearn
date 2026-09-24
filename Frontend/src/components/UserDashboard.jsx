@@ -2,13 +2,16 @@ import React, { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { courseAPI } from "../utils/lmsApi";
 import { Link } from "react-router-dom";
-import { BookOpen, Users, Award, UserCheck } from "lucide-react";
+import { BookOpen, Users, Award, UserCheck, Clock, CheckCircle, XCircle, GraduationCap } from "lucide-react";
+import { mentorApplicationAPI } from "../utils/lmsApi";
 
 const UserDashboard = () => {
   const { user } = useContext(AuthContext);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mentorCourses, setMentorCourses] = useState([]);
+  const [mentorApp, setMentorApp] = useState(null);
+  const [appLoading, setAppLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,6 +31,22 @@ const UserDashboard = () => {
     };
 
     fetchData();
+  }, [user]);
+
+  // Fetch mentor application status for mentor-track users so the
+  // pending application can be surfaced as a banner instead of a lockout.
+  useEffect(() => {
+    if (!user || user.role !== "mentor") return;
+    let cancelled = false;
+    setAppLoading(true);
+    mentorApplicationAPI
+      .getMyApplication()
+      .then((res) => {
+        if (!cancelled) setMentorApp(res.data?.application || res.data || null);
+      })
+      .catch(() => { /* no application yet — that's fine */ })
+      .finally(() => { if (!cancelled) setAppLoading(false); });
+    return () => { cancelled = true; };
   }, [user]);
 
   return (
@@ -61,6 +80,46 @@ const UserDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Mentor application status banner — mentor-track users stay on the
+        normal dashboard; their pending application is surfaced here. */}
+        {user?.role === "mentor" && mentorApp && (
+          <div className={`rounded-3xl border p-6 mt-6 flex items-center justify-between gap-4 flex-wrap ${
+            mentorApp.status === "pending"
+              ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700"
+              : mentorApp.status === "approved"
+                ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-700"
+                : "bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-700"
+          }`}>
+            <div className="flex items-center gap-3">
+              {mentorApp.status === "pending" ? (
+                <Clock size={22} className="text-amber-600" />
+              ) : mentorApp.status === "approved" ? (
+                <CheckCircle size={22} className="text-emerald-600" />
+              ) : (
+                <XCircle size={22} className="text-rose-600" />
+              )}
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-white">
+                  Mentor Application — {mentorApp.status.charAt(0).toUpperCase() + mentorApp.status.slice(1)}
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  {mentorApp.status === "pending"
+                    ? "Your mentor application is under review. You can still browse and purchase courses as a student."
+                    : mentorApp.status === "approved"
+                      ? "You are approved as a mentor. Visit the mentor dashboard to create courses."
+                      : "Your mentor application was rejected. You can still use the platform as a student."}
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/become-mentor"
+              className="text-sm font-semibold px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition"
+            >
+              {mentorApp.status === "approved" ? "Mentor Dashboard" : "View Application"}
+            </Link>
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-3">
           <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8">

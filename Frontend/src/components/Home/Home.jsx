@@ -54,7 +54,7 @@ function Home() {
         keywords="online learning, courses, programming, web development, data science, mentorship, education"
         ogUrl="https://iodlearn.vercel.app/"
       />
-      <main className="relative z-10 text-gray-900 dark:text-white overflow-hidden">
+      <main className="relative z-1 text-gray-900 dark:text-white overflow-hidden">
         {/* ================= HERO ================= */}
         <section className="relative max-w-7xl mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-32">
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-indigo-500/30 blur-[80px] rounded-full pointer-events-none z-0" />

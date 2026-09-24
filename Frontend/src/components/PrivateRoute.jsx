@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from '../context/AuthContext';
 
-const PrivateRoute = ({ children }) => {
+const PrivateRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useContext(AuthContext);
   const location = useLocation();
 
@@ -27,7 +27,31 @@ const PrivateRoute = ({ children }) => {
     );
   }
 
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return (
+      <Navigate
+        to="/"
+        replace
+        state={{
+          message: "You don't have permission to access this page.",
+        }}
+      />
+    );
+  }
+
   return children;
 };
+
+export const StudentRoute = ({ children }) => (
+  <PrivateRoute allowedRoles={["student"]}><>{children}</></PrivateRoute>
+);
+
+export const MentorRoute = ({ children }) => (
+  <PrivateRoute allowedRoles={["mentor"]}><>{children}</></PrivateRoute>
+);
+
+export const AdminRoute = ({ children }) => (
+  <PrivateRoute allowedRoles={["admin"]}><>{children}</></PrivateRoute>
+);
 
 export default PrivateRoute;

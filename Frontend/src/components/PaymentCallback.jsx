@@ -4,6 +4,12 @@ import { paymentAPI } from "../utils/lmsApi";
 import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
+// Render/state logger for reproducing the callback state sequence.
+const logState = (label, state) => {
+  const ts = performance.now().toFixed(1);
+  console.log(`%c[PAYCALLBACK ${ts}ms] ${label}`, "color:#0ea5e9;font-weight:bold", state);
+};
+
 const PaymentCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -11,9 +17,13 @@ const PaymentCallback = () => {
   const [status, setStatus] = useState("Verifying payment...");
   const [loading, setLoading] = useState(true);
 
+  logState("RENDER", { status, loading, ref: searchParams.get("reference") });
+
   useEffect(() => {
     const verifyPayment = async () => {
       const reference = searchParams.get("reference");
+      logState("VERIFY_START", { reference });
+
       if (!reference) {
         setStatus("No payment reference provided.");
         setLoading(false);
@@ -23,6 +33,7 @@ const PaymentCallback = () => {
 
       try {
         const response = await paymentAPI.verify(reference);
+        logState("VERIFY_RESOLVED", { status: response.status, body: response.data });
         setStatus(response.data.message || "Payment verified successfully.");
         setLoading(false);
         toast.success("Payment verified successfully.");
@@ -36,6 +47,7 @@ const PaymentCallback = () => {
           }
         }, 1800);
       } catch (err) {
+        logState("VERIFY_REJECTED", { status: err.response?.status, body: err.response?.data });
         setStatus(err.response?.data?.error || "Payment verification failed.");
         setLoading(false);
         toast.error(err.response?.data?.error || "Payment verification failed.");

@@ -56,12 +56,11 @@ walletSchema.pre("save", function(next) {
   next();
 });
 
-walletSchema.index({ user: 1 });
 // ✅ Additional Wallet indexes for financial queries
 walletSchema.index({ "transactions.status": 1, "transactions.createdAt": -1 });  // Transaction filtering
 walletSchema.index({ "withdrawals.status": 1 });  // Pending withdrawal tracking
 
-walletSchema.methods.addEarning = async function(amount, description, paymentId = null) {
+walletSchema.methods.addEarning = async function(amount, description, paymentId = null, session = null) {
   this.pendingBalance += amount;
   this.totalEarnings += amount;
   this.transactions.push({
@@ -71,7 +70,11 @@ walletSchema.methods.addEarning = async function(amount, description, paymentId 
     payment: paymentId,
     status: "completed"
   });
-  await this.save();
+  if (session) {
+    await this.save({ session });
+  } else {
+    await this.save();
+  }
 };
 
 walletSchema.methods.approveWithdrawal = async function(withdrawalId, adminId) {

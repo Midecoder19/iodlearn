@@ -6,7 +6,6 @@ const User = require("../models/User");
 const Wallet = require("../models/Wallet");
 const { verifyToken, verifyAdmin } = require("../middleware/verifyToken");
 const { validateMongoId, validatePayment } = require("../middleware/validation");
-const { verifyPaystackWebhook, jsonParserWithRawBody } = require("../middleware/verifyWebhook");
 const logger = require("../utils/logger");
 const crypto = require("crypto");
 
@@ -63,62 +62,41 @@ const verifyTransaction = async (reference) => {
 };
 
 router.post("/initialize", verifyToken, validatePayment, async (req, res) => {
-  const session = await Payment.startSession();
-  
   try {
-    session.startTransaction();
     const { courseId } = req.body;
     const userId = req.user.id;
 
     if (!courseId) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       return res.status(400).json({ message: "Course ID is required" });
     }
 
-    const course = await Course.findById(courseId).populate("mentor").session(session);
+    const course = await Course.findById(courseId).populate("mentor");
     if (!course) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       return res.status(404).json({ message: "Course not found" });
     }
 
-    const user = await User.findById(userId).session(session);
+    const user = await User.findById(userId);
     if (!user) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       return res.status(404).json({ message: "User not found" });
     }
 
     if (user.enrolledCourses.includes(courseId)) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       return res.status(400).json({ message: "Already enrolled in this course" });
     }
 
     if (!course.isPaid || course.price <= 0) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       return res.status(400).json({ message: "This course is free" });
     }
 
-    const idempotencyKey = `pay_${userId}_${courseId}_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+    const idempotencyKey = `pay_${userId}_${courseId}_${Date.now()}`;
     const existingPending = await Payment.findOne({
       user: userId,
       course: courseId,
       paymentStatus: "pending",
       createdAt: { $gt: new Date(Date.now() - 30 * 60 * 1000) }
-    }).session(session);
+    });
     
     if (existingPending) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       logger.warn("Duplicate payment attempt", { userId, courseId, existingRef: existingPending.transactionRef });
       return res.status(409).json({ 
         message: "Payment already in progress",
@@ -126,25 +104,23 @@ router.post("/initialize", verifyToken, validatePayment, async (req, res) => {
       });
     }
 
-    // Convert price to kobo (integer minor units) to avoid floating-point issues
-    const amountInKobo = Math.round(course.price * 100);
+    const amountInKobo = course.price * 100;
+    const amountInNaira = course.price;
     
-    let commissionRate, commissionAmountKobo, tutorEarningsKobo, platformEarningsKobo;
+    let commissionRate, commissionAmount, tutorEarnings, platformEarnings;
 
     if (course.uploaded_by === "admin") {
-      // Admin uploaded course - 100% platform revenue, no mentor payout
+      // Admin uploaded course - 100% goes to admin
       commissionRate = 0;
-      commissionAmountKobo = 0;
-      tutorEarningsKobo = 0;
-      platformEarningsKobo = amountInKobo;
+      commissionAmount = 0;
+      tutorEarnings = 0;
+      platformEarnings = amountInNaira;
     } else {
       // Mentor uploaded course - apply commission split
-      // Capture commission rate at time of payment to handle mid-transaction changes
       commissionRate = course.mentor.mentorProfile?.commissionRate || course.commissionPercent || GLOBAL_COMMISSION_RATE;
-      // Calculate in kobo to avoid floating-point issues
-      commissionAmountKobo = Math.round((amountInKobo * commissionRate) / 100);
-      tutorEarningsKobo = amountInKobo - commissionAmountKobo;
-      platformEarningsKobo = commissionAmountKobo;
+      commissionAmount = Number(((amountInNaira * commissionRate) / 100).toFixed(2));
+      tutorEarnings = Number((amountInNaira - commissionAmount).toFixed(2));
+      platformEarnings = commissionAmount;
     }
 
     const transactionRef = `TXN_${crypto.randomBytes(8).toString("hex").toUpperCase()}`;
@@ -154,31 +130,28 @@ router.post("/initialize", verifyToken, validatePayment, async (req, res) => {
       course: courseId,
       mentor: course.mentor._id,
       uploaded_by: course.uploaded_by,
-      amount: amountInKobo, // Store in kobo (integer) ONLY
+      amount: amountInNaira,
       transactionRef,
       idempotencyKey,
       commissionRate,
-      commissionAmount: commissionAmountKobo, // Store in kobo ONLY
-      tutorEarnings: tutorEarningsKobo, // Store in kobo ONLY
-      platformEarnings: platformEarningsKobo, // Store in kobo ONLY
+      commissionAmount,
+      tutorEarnings,
+      platformEarnings,
       paymentStatus: "pending",
       metadata: {
         courseTitle: course.title,
-        mentorName: course.mentor.name,
-        commissionRate // Store commission rate at time of payment
+        mentorName: course.mentor.name
       }
     });
-    await payment.save({ session });
-    
-    await session.commitTransaction();
+    await payment.save();
     
     logger.payment("Payment initialized", {
       transactionRef,
       userId,
       courseId,
-      amount: amountInKobo, // Log in kobo
+      amount: amountInNaira,
       commissionRate,
-      tutorEarnings: tutorEarningsKobo
+      tutorEarnings
     });
 
     const metadata = {
@@ -188,8 +161,8 @@ router.post("/initialize", verifyToken, validatePayment, async (req, res) => {
       courseId,
       courseTitle: course.title,
       commissionRate,
-      commissionAmount: commissionAmountKobo,
-      tutorEarnings: tutorEarningsKobo
+      commissionAmount,
+      tutorEarnings
     };
 
     const paystackResponse = await initializePayment(user.email, amountInKobo, metadata);
@@ -200,33 +173,18 @@ router.post("/initialize", verifyToken, validatePayment, async (req, res) => {
     res.json({
       authorizationUrl: paystackResponse.data.authorization_url,
       transactionRef,
-      amount: amountInKobo / 100, // Return display value in naira (computed from kobo)
+      amount: amountInNaira,
       commissionRate,
-      tutorEarnings: tutorEarningsKobo / 100, // Return display value (computed from kobo)
-      platformEarnings: platformEarningsKobo / 100 // Return display value (computed from kobo)
+      tutorEarnings,
+      platformEarnings
     });
   } catch (err) {
-    if (session.inTransaction()) {
-      await session.abortTransaction();
-    }
-    
-    // Handle duplicate idempotencyKey error (race condition)
-    if (err.code === 11000 && err.keyPattern?.idempotencyKey) {
-      logger.warn("Duplicate idempotencyKey detected", { error: err.message });
-      return res.status(409).json({ 
-        message: "Payment already in progress - please try again",
-        error: "duplicate_request"
-      });
-    }
-    
     logger.error("Payment initialization failed", { error: err.message, stack: err.stack });
     res.status(500).json({ message: "Failed to initialize payment" });
-  } finally {
-    session.endSession();
   }
 });
 
-router.post("/verify-callback", verifyPaystackWebhook, async (req, res) => {
+router.post("/verify-callback", async (req, res) => {
   const { event, data } = req.body;
   
   if (event !== "charge.success") {
@@ -237,38 +195,25 @@ router.post("/verify-callback", verifyPaystackWebhook, async (req, res) => {
   const metadata = data.metadata || {};
   const { transactionRef, idempotencyKey, userId, courseId } = metadata;
   
-  const session = await Payment.startSession();
-  
   try {
-    session.startTransaction();
-    
     const payment = await Payment.findOne({ 
       $or: [
         { transactionRef },
         { paystackRef: reference }
       ]
-    }).session(session);
+    });
     
     if (!payment) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       logger.error("Payment not found for webhook", { transactionRef, reference });
       return res.status(404).json({ message: "Payment not found" });
     }
     
     if (payment.paymentStatus === "success") {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       logger.warn("Duplicate payment webhook", { transactionRef, reference });
       return res.status(200).json({ message: "Already processed" });
     }
     
     if (payment.paymentStatus === "failed") {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
       logger.warn("Payment already failed", { transactionRef, reference });
       return res.status(200).json({ message: "Already processed" });
     }
@@ -279,51 +224,47 @@ router.post("/verify-callback", verifyPaystackWebhook, async (req, res) => {
     payment.paymentMethod = data.payment_method?.type;
     payment.gatewayResponse = data;
     payment.paymentVerifiedAt = new Date();
-    await payment.save({ session });
+    await payment.save();
     
     await User.findByIdAndUpdate(payment.user, {
       $addToSet: { 
         enrolledCourses: payment.course, 
         purchasedCourses: payment.course 
       }
-    }).session(session);
+    });
     
     await Course.findByIdAndUpdate(payment.course, {
       $addToSet: { enrolledStudents: payment.user }
-    }).session(session);
+    });
     
-    // Credit wallet based on uploaded_by (using kobo values)
+    // Credit wallet based on uploaded_by
     if (payment.uploaded_by === "admin") {
-      // Credit admin wallet with full amount (in kobo)
-      let adminWallet = await Wallet.findOne({ user: payment.mentor }).session(session);
+      // Credit admin wallet with full amount
+      let adminWallet = await Wallet.findOne({ user: payment.mentor });
       if (!adminWallet) {
         adminWallet = new Wallet({ user: payment.mentor });
-        await adminWallet.save({ session });
+        await adminWallet.save();
       }
       
       await adminWallet.addEarning(
-        payment.platformEarnings, // Stored in kobo
+        payment.platformEarnings,
         `Admin course sale: ${payment.transactionRef}`,
-        payment._id,
-        session
+        payment._id
       );
     } else {
-      // Credit mentor wallet with their share only (in kobo)
-      let wallet = await Wallet.findOne({ user: payment.mentor }).session(session);
+      // Credit mentor wallet with their share
+      let wallet = await Wallet.findOne({ user: payment.mentor });
       if (!wallet) {
         wallet = new Wallet({ user: payment.mentor });
-        await wallet.save({ session });
+        await wallet.save();
       }
       
       await wallet.addEarning(
-        payment.tutorEarnings, // Stored in kobo
+        payment.tutorEarnings,
         `Course sale: ${payment.transactionRef}`,
-        payment._id,
-        session
+        payment._id
       );
     }
-    
-    await session.commitTransaction();
     
     logger.payment("Webhook payment verified and credited", {
       transactionRef: payment.transactionRef,
@@ -333,13 +274,8 @@ router.post("/verify-callback", verifyPaystackWebhook, async (req, res) => {
     
     res.status(200).json({ message: "Payment verified" });
   } catch (err) {
-    if (session.inTransaction()) {
-      await session.abortTransaction();
-    }
     logger.error("Webhook processing failed", { error: err.message, reference });
     res.status(500).json({ message: "Processing failed" });
-  } finally {
-    session.endSession();
   }
 });
 
@@ -569,51 +505,6 @@ router.post("/withdraw/:withdrawalId/reject", verifyToken, verifyAdmin, async (r
     res.json({ message: "Withdrawal rejected" });
   } catch (err) {
     res.status(500).json({ message: err.message || "Failed to reject withdrawal" });
-  }
-});
-
-// Refund endpoint (admin only)
-router.post("/:paymentId/refund", verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const { paymentId } = req.params;
-    const { refundAmount, refundReason } = req.body;
-
-    const payment = await Payment.findById(paymentId);
-    if (!payment) {
-      return res.status(404).json({ message: "Payment not found" });
-    }
-
-    if (payment.paymentStatus !== "success") {
-      return res.status(400).json({ message: "Can only refund successful payments" });
-    }
-
-    if (payment.isRefunded) {
-      return res.status(400).json({ message: "Payment already refunded" });
-    }
-
-    // Convert naira to kobo if provided, otherwise use full amount in kobo
-    const amountToRefundKobo = refundAmount ? Math.round(refundAmount * 100) : payment.amount;
-
-    if (amountToRefundKobo > payment.amount) {
-      return res.status(400).json({ message: "Refund amount cannot exceed payment amount" });
-    }
-
-    await payment.processRefund(amountToRefundKobo, refundReason || "Admin refund", req.user.id);
-
-    logger.admin("Payment refunded", { 
-      paymentId, 
-      transactionRef: payment.transactionRef, 
-      refundAmount: amountToRefundKobo, // Log in kobo
-      adminId: req.user.id 
-    });
-
-    res.json({ 
-      message: "Refund processed successfully", 
-      payment
-    });
-  } catch (err) {
-    logger.error("Refund processing failed", { error: err.message });
-    res.status(500).json({ message: "Failed to process refund" });
   }
 });
 

@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const path = require("path");
@@ -61,7 +62,13 @@ app.use(helmet({
   referrerPolicy: { policy: "strict-origin-when-cross-origin" }
 }));
 
-app.use(express.json({ limit: "5mb" }));
+// Global JSON parser with raw body capture support
+app.use(express.json({ 
+  limit: "5mb",
+  verify: (req, res, buf) => {
+    req.rawBody = buf; // Capture raw body for webhook signature verification
+  }
+}));
 
 // Rate limiting for different endpoints
 const generalLimiter = rateLimit({
@@ -204,6 +211,7 @@ app.get("/api/seed", async (req, res) => {
 
 // New LMS Routes
 app.use("/api/courses", require("./routes/courseRoutes"));
+app.use("/api/payments/verify-callback", require("./routes/paymentRoutes")); // Webhook endpoint without rate limiter
 app.use("/api/payments", paymentLimiter, require("./routes/paymentRoutes"));
 app.use("/api/progress", require("./routes/progressRoutes"));
 app.use("/api/mentorship", require("./routes/mentorshipRoutes"));
@@ -265,5 +273,5 @@ console.log(`📡 Attempting to start server on port ${PORT}...`);
 server.listen(PORT, () => {
   console.log(`🚀 Server successfully running on http://localhost:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📦 Database: ${process.env.MONGODB_URI ? '✅ Connected' : '❌ Not configured'}`);
+  console.log(`📦 Database: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '❌ Not connected'}`);
 });

@@ -8,7 +8,7 @@ import { Route, RouterProvider, createBrowserRouter, createRoutesFromElements, N
 import Home from "./components/Home/Home.jsx";
 import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
-import PrivateRoute from "./components/PrivateRoute.jsx";
+import PrivateRoute, { StudentRoute, MentorRoute } from "./components/PrivateRoute.jsx";
 import About from "./components/About/About.jsx";
 import VerifyOTP from "./components/VerifyOTP.jsx";
 import ForgotPassword from "./components/Authentication/ForgotPassword.jsx";
@@ -24,6 +24,7 @@ import PaymentCallback from "./components/PaymentCallback.jsx";
 import UserDashboard from "./components/UserDashboard.jsx";
 import MentorDashboard from "./components/Mentor/MentorDashboard.jsx";
 import CreateCourse from "./components/Mentor/CreateCourse.jsx";
+import Contact from "./components/Contact.jsx";
 import { registerSW } from "virtual:pwa-register";
 
 const updateSW = registerSW({
@@ -46,6 +47,7 @@ const router = createBrowserRouter(
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -62,9 +64,9 @@ const router = createBrowserRouter(
         <Route path="/course/:id" element={<CourseDetailPage />} />
         <Route path="/courses/:id" element={<CourseDetailPage />} />
         <Route path="/payment/callback" element={<PaymentCallback />} />
-        <Route path="/dashboard" element={<PrivateRoute><UserDashboard /></PrivateRoute>} />
-        <Route path="/mentor" element={<PrivateRoute><MentorDashboard /></PrivateRoute>} />
-        <Route path="/create-course" element={<PrivateRoute><CreateCourse /></PrivateRoute>} />
+        <Route path="/dashboard" element={<StudentRoute><UserDashboard /></StudentRoute>} />
+        <Route path="/mentor" element={<MentorRoute><MentorDashboard /></MentorRoute>} />
+        <Route path="/create-course" element={<MentorRoute><CreateCourse /></MentorRoute>} />
         <Route path="/become-mentor" element={<PrivateRoute><ApplyAsMentor /></PrivateRoute>} />
 
 

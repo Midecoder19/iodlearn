@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema(
     resetTokenExpires: Date,
     username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     usernameChanged: { type: Boolean, default: false },
-    isPublic: { type: Boolean, default: false, index: true },
+    isPublic: { type: Boolean, default: false },
   },
   {
     timestamps: true,

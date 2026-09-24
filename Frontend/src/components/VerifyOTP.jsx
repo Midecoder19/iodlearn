@@ -99,10 +99,12 @@ const VerifyOTP = () => {
       return;
     }
 
+    const normalizedEmail = (email || "").trim().toLowerCase();
+
     setLoading(true);
     try {
       const res = await axios.post(`${Backurl}/api/auth/verify-otp`, {
-        email,
+        email: normalizedEmail,
         otp,
       });
 
@@ -114,11 +116,13 @@ const VerifyOTP = () => {
       localStorage.removeItem('intendedRole');
       
       // Redirect based on role
+      // Mentor-track users land on the normal dashboard with a pending
+      // application banner; they are NOT locked into the application form.
       if (role === 'mentor') {
-        toast.success("Please complete your mentor application");
+        toast.success("Welcome! Your mentor application is pending review.");
         setTimeout(() => {
-          console.log("Redirecting to /become-mentor");
-          navigate("/become-mentor");
+          console.log("Redirecting to /dashboard");
+          navigate("/dashboard");
         }, 2000);
       } else {
         setTimeout(() => {
@@ -150,7 +154,8 @@ const VerifyOTP = () => {
 
     setResending(true);
     try {
-      const res = await axios.post(`${Backurl}/api/auth/resend-otp`, { email });
+      const normalizedEmail = (email || "").trim().toLowerCase();
+      const res = await axios.post(`${Backurl}/api/auth/resend-otp`, { email: normalizedEmail });
 
       toast.success(res.data.message || "OTP resent to your email");
 

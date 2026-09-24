@@ -5,7 +5,7 @@ import { ThemeContext } from "../../context/ThemeContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
 import { BsSunFill, BsMoonFill } from "react-icons/bs";
-import { GraduationCap, Search, FileText, History, HelpCircle, Loader2 } from "lucide-react";
+import { GraduationCap, Search, FileText, History, HelpCircle, Loader2, User } from "lucide-react";
 import logoIcon from "../../../src/assets/logo.png";
 import axios from "axios";
 import { BACKEND_BASE } from "../../utils/lmsApi";
@@ -15,7 +15,6 @@ const Header = () => {
   const { darkMode, setDarkMode } = useContext(ThemeContext);
   const navigate = useNavigate();
 
-  const isLoggedIn = !!localStorage.getItem("token");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,17 +98,37 @@ const Header = () => {
     { name: "Courses", path: "/courses" },
   ];
 
-  const mentorLinks = [
-    { name: "Mentor Dashboard", path: "/mentor" },
-  ];
-
-  const studentLinks = [
-    { name: "My Dashboard", path: "/dashboard" },
-  ];
-
   const secondaryLinks = [
     { name: "About", path: "/about" },
+    { name: "Contact", path: "/contact" },
   ];
+
+  const getNavLinks = () => {
+    // Base links everyone sees. Role-specific links are added below.
+    const links = [...primaryLinks];
+
+    if (!user) return links;
+
+    if (user.role === "admin") {
+      // Admin panel is a separate app (port 5174), not a route here.
+      return links;
+    }
+
+    if (user.role === "mentor") {
+      // A mentor whose application is still pending functions as a student
+      // on the main platform — show the student dashboard, not the mentor one.
+      if (user.isMentorApproved) {
+        links.push({ name: "Mentor Dashboard", path: "/mentor" });
+      } else {
+        links.push({ name: "My Dashboard", path: "/dashboard" });
+      }
+      return links;
+    }
+
+    // student
+    links.push({ name: "My Dashboard", path: "/dashboard" });
+    return links;
+  };
 
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -197,35 +216,7 @@ const Header = () => {
           {/* Navigation (desktop) */}
           <div className="hidden md:flex md:items-center">
             <nav className="flex items-center gap-1 lg:gap-2">
-              {primaryLinks.map((item) => (
-                <NavLink
-                  key={item.name}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
-                      ? "text-indigo-600 bg-indigo-50/50 dark:text-indigo-300 dark:bg-white/5"
-                      : "text-gray-600 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5"
-                    }`
-                  }
-                >
-                  {item.name}
-                </NavLink>
-              ))}
-              {isLoggedIn && studentLinks.map((item) => (
-                <NavLink
-                  key={item.name}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
-                      ? "text-indigo-600 bg-indigo-50/50 dark:text-indigo-300 dark:bg-white/5"
-                      : "text-gray-600 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5"
-                    }`
-                  }
-                >
-                  {item.name}
-                </NavLink>
-              ))}
-              {user?.role === "mentor" && mentorLinks.map((item) => (
+              {getNavLinks().map((item) => (
                 <NavLink
                   key={item.name}
                   to={item.path}
@@ -315,7 +306,7 @@ const Header = () => {
             </button>
 
             <div className="hidden md:flex items-center gap-2 lg:gap-3">
-              {isLoggedIn ? (
+              {user ? (
                 <>
                   <button
                     onClick={() => navigate("/profile")}
@@ -443,7 +434,7 @@ const Header = () => {
                 </AnimatePresence>
               </div>
 
-              {[...primaryLinks, ...(isLoggedIn ? studentLinks : []), ...(user?.role === "mentor" ? mentorLinks : []), ...secondaryLinks].map(
+              {getNavLinks().map(
                 (item) => (
                   <NavLink
                     key={item.name}
@@ -461,9 +452,27 @@ const Header = () => {
                 )
               )}
 
+              <div className="pt-2 border-t border-white/5 flex flex-col gap-1">
+                {secondaryLinks.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `block py-3 px-4 rounded-xl text-base font-medium transition-all ${isActive
+                        ? "text-indigo-600 bg-indigo-50 dark:text-indigo-300 dark:bg-white/5"
+                        : "text-gray-700 hover:text-indigo-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5"
+                      }`
+                    }
+                  >
+                    {item.name}
+                  </NavLink>
+                ))}
+              </div>
+
               <div className="pt-2 border-t border-white/5 flex flex-col gap-2">
                 {/* Profile link for logged in users */}
-                {isLoggedIn && (
+                {user && (
                   <NavLink
                     to="/profile"
                     onClick={() => setIsMenuOpen(false)}
@@ -492,7 +501,7 @@ const Header = () => {
                   <span className="text-gray-700 dark:text-gray-200">{darkMode ? "Light Mode" : "Dark Mode"}</span>
                 </button>
 
-                {isLoggedIn ? (
+                {user ? (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FDE68A] to-[#F59E0B] flex items-center justify-center text-sm font-semibold overflow-hidden">
