@@ -41,10 +41,22 @@ const verifyAuth = (req, res, next) => {
   });
 };
 
-const verifyMentor = (req, res, next) => {
-  verifyToken(req, res, () => {
-    if (req.user.role !== "mentor" || !req.user.isMentorApproved) return res.status(403).json({ error: "Not authorized as approved mentor" });
-    next();
+const verifyMentor = async (req, res, next) => {
+  verifyToken(req, res, async () => {
+    try {
+      // The JWT payload only carries { id, role }. isMentorApproved is NOT
+      // part of the token, so checking req.user.isMentorApproved would always
+      // be undefined and reject every mentor — even approved ones. Look the
+      // user up from the DB instead so the approval flag is authoritative.
+      const User = require("../models/User");
+      const user = await User.findById(req.user.id);
+      if (!user || user.role !== "mentor" || !user.isMentorApproved) {
+        return res.status(403).json({ error: "Not authorized as approved mentor" });
+      }
+      next();
+    } catch (err) {
+      return res.status(500).json({ error: "Authorization check failed" });
+    }
   });
 };
 
