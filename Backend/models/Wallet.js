@@ -8,13 +8,19 @@ const walletTransactionSchema = new mongoose.Schema({
   },
   amount: { type: Number, required: true },
   description: { type: String },
-  payment: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
+  payment: { type:
+    
+    
+    
+        mongoose.Schema.Types.ObjectId, ref: "Payment" },
   status: { 
     type: String, 
     enum: ["pending", "completed", "failed", "cancelled"], 
     default: "pending" 
-  },
+  },  
   reference: { type: String },
+
+
   createdAt: { type: Date, default: Date.now }
 });
 

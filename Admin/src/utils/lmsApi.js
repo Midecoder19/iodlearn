@@ -90,6 +90,8 @@ export const adminAPI = {
   getWithdrawals: (status) => api.get("/admin/withdrawals", { params: { status } }),
   processWithdrawal: (withdrawalId, action, adminNotes) => api.post(`/admin/withdrawals/${withdrawalId}/process`, { action, adminNotes }),
   getRevenue: (params) => api.get("/admin/revenue", { params }),
+  updateMentorCommissionRate: (id, commissionRate) => api.put(`/admin/mentors/${id}/commission-rate`, { commissionRate }),
+  triggerPasswordReset: (id) => api.post(`/admin/users/${id}/password-reset`),
 };
 
 export const messageAPI = {

@@ -124,6 +124,35 @@ router.post("/:id/lessons", verifyToken, verifyMentor, validateMongoId, validate
 
     const { title, description, videoUrl, videoPublicId, pdfUrl, pdfPublicId, resources, duration, isFree } = req.body;
 
+    // Only accept media URLs that were uploaded through our own Cloudinary
+    // account. Without this a mentor could point lessons at arbitrary remote
+    // files (hosted content, hotlinks, malware), which would also break the
+    // download-prevention guarantee since we never control those files.
+    // We check BOTH the hostname AND that the path contains our cloud name
+    // (e.g. res.cloudinary.com/<CLOUD_NAME>/upload/...) so a URL from a
+    // different Cloudinary account or a lookalike host is rejected.
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || "";
+    const isCloudinaryUrl = (url) => {
+      if (!url || typeof url !== "string") return true; // optional fields
+      try {
+        const parsed = new URL(url);
+        const host = parsed.hostname.toLowerCase();
+        const allowedHosts = ["res.cloudinary.com", "cloudinary.com"];
+        if (!allowedHosts.includes(host)) return false;
+        if (!cloudName) return true; // no cloud name configured — allow
+        const parts = parsed.pathname.split("/").filter(Boolean);
+        return parts.includes(cloudName);
+      } catch {
+        return false;
+      }
+    };
+    if (!isCloudinaryUrl(videoUrl)) {
+      return res.status(400).json({ error: "videoUrl must be a Cloudinary URL from our account" });
+    }
+    if (!isCloudinaryUrl(pdfUrl)) {
+      return res.status(400).json({ error: "pdfUrl must be a Cloudinary URL from our account" });
+    }
+
     const lesson = {
       title,
       description,

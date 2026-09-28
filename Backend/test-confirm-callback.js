@@ -93,7 +93,11 @@ const signWebhook = (body) => {
   console.log("  mentor wallet BEFORE /verify-callback:", mwalletBefore ? mwalletBefore.pendingBalance : "no wallet", "kobo");
 
   const cbMentor = await axios.post(BASE + "/payments/verify-callback", webhookBody2, {
-    headers: { "x-paystack-signature": signWebhook(webhookBody2) }
+    headers: { "x-paystack-signature": signWebhook(webhookBody2)  
+
+
+        
+     }
   });
   const mpayAfter = await payments.findOne({ _id: mpay._id });
   const mwallet = await wallets.findOne({ user: mu._id });

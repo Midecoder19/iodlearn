@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Check, X, Search, UserCheck, Eye, DollarSign, Calendar, Briefcase, GraduationCap, Link } from "lucide-react";
+import { Check, X, Search, UserCheck, Eye, DollarSign, Calendar, Briefcase, GraduationCap, Link, Edit, Save, X as XIcon, Loader2 } from "lucide-react";
 import { adminAPI } from "../utils/lmsApi";
 import toast from "react-hot-toast";
 
@@ -11,6 +11,9 @@ const MentorManagement = () => {
     const [selectedApplication, setSelectedApplication] = useState(null);
     const [showApplicationModal, setShowApplicationModal] = useState(false);
     const [commissionRate, setCommissionRate] = useState(10);
+    const [editingMentor, setEditingMentor] = useState(null);
+    const [editCommissionRate, setEditCommissionRate] = useState(10);
+    const [isEditingCommission, setIsEditingCommission] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -88,6 +91,29 @@ const MentorManagement = () => {
             toast.success("Mentor application rejected");
         } catch (err) {
             toast.error("Failed to reject application");
+        }
+    };
+
+    const handleEditCommission = (mentor) => {
+        setEditingMentor(mentor);
+        setEditCommissionRate(mentor.mentorProfile?.commissionRate || 10);
+    };
+
+    const handleSaveCommission = async () => {
+        if (!editingMentor) return;
+        try {
+            setIsEditingCommission(true);
+            await adminAPI.updateMentorCommissionRate(editingMentor._id, editCommissionRate);
+            setMentors(mentors.map(m => 
+                m._id === editingMentor._id ? { ...m, mentorProfile: { ...m.mentorProfile, commissionRate: editCommissionRate } } : m
+            ));
+            toast.success(`Commission rate updated to ${editCommissionRate}%`);
+            setEditingMentor(null);
+        } catch (err) {
+            console.error("Error updating commission rate:", err);
+            toast.error(err.response?.data?.error || "Failed to update commission rate");
+        } finally {
+            setIsEditingCommission(false);
         }
     };
 
@@ -206,6 +232,38 @@ const MentorManagement = () => {
                                                 <span className="text-gray-600 dark:text-gray-300">
                                                     Commission: <span className="font-bold text-green-600">{mentor.mentorProfile.commissionRate}%</span>
                                                 </span>
+                                                {!editingMentor || editingMentor._id !== mentor._id ? (
+                                                    <button
+                                                        onClick={() => handleEditCommission(mentor)}
+                                                        className="ml-2 text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                ) : (
+                                                    <div className="ml-2 flex items-center gap-1">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="100"
+                                                            value={editCommissionRate}
+                                                            onChange={(e) => setEditCommissionRate(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                                                            className="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-white/20 rounded bg-white dark:bg-white/10 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                        />
+                                                        <button
+                                                            onClick={handleSaveCommission}
+                                                            disabled={isEditingCommission}
+                                                            className="text-xs text-green-600 hover:text-green-700 disabled:opacity-50"
+                                                        >
+                                                            {isEditingCommission ? <span className="animate-spin">⟳</span> : <Save size={12} />}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setEditingMentor(null)}
+                                                            className="text-xs text-red-600 hover:text-red-700"
+                                                        >
+                                                            <XIcon size={12} />
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -225,8 +283,9 @@ const MentorManagement = () => {
                             <button
                                 onClick={() => setShowApplicationModal(false)}
                                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                aria-label="Close"
                             >
-                                ✕
+                                <XIcon size={16} />
                             </button>
                         </div>
                         

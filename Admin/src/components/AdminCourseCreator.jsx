@@ -220,8 +220,9 @@ const AdminCourseCreator = ({ onCourseCreated, editingCourse, onCourseUpdated })
             if (editingCourse && onCourseUpdated) onCourseUpdated();
           }}
           className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          aria-label="Close"
         >
-          ✕
+          <X size={16} />
         </button>
       </div>
 

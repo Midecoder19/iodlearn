@@ -148,9 +148,29 @@ router.put('/mentors/:id/commission-rate', verifyAdmin, validateMongoId, async (
 
 router.delete('/users/:id', verifyAdmin, validateMongoId, async (req, res) => {
     try {
-      const deletedUser = await User.findByIdAndDelete(req.params.id);
-      if (!deletedUser) return res.status(404).json({ error: "User not found" });
-  
+      const userId = req.params.id;
+
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      // Refuse to delete a user who has financial history — deleting them
+      // would orphan payment records and leave a dangling wallet balance.
+      // Suggest suspend instead; there is no suspend endpoint yet.
+      const [paymentCount, wallet] = await Promise.all([
+        Payment.countDocuments({ user: userId }),
+        Wallet.findOne({ user: userId })
+      ]);
+
+      const walletBalance = (wallet ? wallet.pendingBalance + wallet.availableBalance : 0);
+      if (paymentCount > 0 || walletBalance > 0) {
+        return res.status(400).json({
+          error: "Cannot delete user with financial history",
+          detail: `User has ${paymentCount} payment record(s) and a wallet balance of ${walletBalance} kobo.`,
+          suggestion: "Suspend the user instead. A suspend endpoint is not yet implemented."
+        });
+      }
+
+      const deletedUser = await User.findByIdAndDelete(userId);
       res.status(200).json({ message: "User deleted", user: deletedUser });
     } catch (err) {
       res.status(500).json({ error: "Failed to delete user" });

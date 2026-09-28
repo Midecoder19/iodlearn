@@ -9,6 +9,7 @@ const { validateLogin, validateRegister, validateForgotPassword, validateResetPa
 const { otpHtmlTemplate } = require('../utils/emailTemplates');
 const sendMail = require('../utils/sendMail');
 const { client: redisClient } = require('../config/redis');
+const { generateAndStoreResetToken } = require('../utils/passwordReset');
 
 // const router = express.Router(); // Already declared above - duplicate removed
 
@@ -65,7 +66,8 @@ const router = express.Router();
 router.post('/register', validateRegister, async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -74,7 +76,7 @@ router.post('/register', validateRegister, async (req, res) => {
     const otp = crypto.randomInt(100000, 999999).toString();
     const user = new User({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role: 'student', // Always start as student, role changes after mentor approval
       verified: false,
@@ -87,12 +89,20 @@ router.post('/register', validateRegister, async (req, res) => {
     const clientUrl = process.env.CLIENT_URL?.replace(/\/$/, '') || 'https://iodlearn.vercel.app';
     const verifyLink = `${clientUrl}/verify`;
 
-    await sendMail({
-      to: email,
-      subject: 'Verify your email - Iodlearn',
-      text: `Your verification code is ${otp}`,
-      html: otpHtmlTemplate(otp, name, verifyLink)
-    });
+    try {
+      await sendMail({
+        to: user.email,
+        subject: 'Verify your email - Iodlearn',
+        text: `Your verification code is ${otp}`,
+        html: otpHtmlTemplate(otp, name, verifyLink)
+      });
+    } catch (emailErr) {
+      console.error('Failed to send verification email:', emailErr.response?.status || emailErr.message);
+      return res.status(503).json({ 
+        message: 'Registration successful, but verification email could not be sent. Please try resending the verification code.',
+        emailSent: false
+      });
+    }
 
     res.status(201).json({ message: 'Registration successful. Check your email for the verification code.' });
   } catch (error) {
@@ -153,7 +163,8 @@ router.post('/login', validateLogin, async (req, res) => {
 router.post('/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -181,7 +192,8 @@ router.post('/verify-otp', async (req, res) => {
 router.post('/resend-otp', async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -195,12 +207,25 @@ router.post('/resend-otp', async (req, res) => {
     user.otpExpires = Date.now() + 10 * 60 * 1000;
     await user.save();
 
-    await sendMail({
-      to: email,
-      subject: 'Resend verification code - Iodlearn',
-      text: `Your new verification code is ${otp}`
-    });
+    const clientUrl = process.env.CLIENT_URL?.replace(/\/$/, '') || 'https://iodlearn.vercel.app';
+    const verifyLink = `${clientUrl}/verify`;
 
+    try {
+      await sendMail({
+        to: user.email,
+        subject: 'Resend verification code - Iodlearn',
+        text: `Your new verification code is ${otp}`,
+        html: otpHtmlTemplate(otp, user.name, verifyLink)
+      });
+    } catch (emailErr) {
+      console.error('Failed to resend verification email:', emailErr.response?.status || emailErr.message);
+      return res.status(503).json({ 
+        message: 'Verification code generated, but email could not be sent. Please try again later or contact support.',
+        emailSent: false
+      });
+    }
+
+    console.log(`Verification code resent to: ${user.email}`);
     res.json({ message: 'Verification code resent' });
   } catch (error) {
     console.error('Resend OTP error:', error);
@@ -216,17 +241,7 @@ router.post('/forgot-password', validateForgotPassword, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetToken = resetToken;
-    user.resetTokenExpires = Date.now() + 10 * 60 * 1000;
-    await user.save();
-
-    const resetLink = `${process.env.CLIENT_URL || 'https://iodlearn.vercel.app'}/reset-password/${resetToken}`;
-    await sendMail({
-      to: email,
-      subject: 'Reset your password - Iodlearn',
-      text: `Reset your password using this link: ${resetLink}`
-    });
+    await generateAndStoreResetToken(user, "self");
 
     res.json({ message: 'Password reset email sent' });
   } catch (error) {
@@ -258,10 +273,26 @@ router.post('/reset-password/:token', validateResetPassword, async (req, res) =>
 
 router.put('/update-profile', verifyToken, validateUpdateProfile, async (req, res) => {
   try {
+    const {
+      name,
+      username,
+      avatar,
+      bio,
+      isPublic,
+      privacySettings,
+      academic,
+      socialProfiles,
+    } = req.body;
+
     const updates = {};
-    if (req.body.name) updates.name = req.body.name;
-    if (req.body.avatar) updates.avatar = req.body.avatar;
-    if (req.body.username) updates.username = req.body.username;
+    if (name !== undefined) updates.name = name;
+    if (username !== undefined) updates.username = username;
+    if (avatar !== undefined) updates.avatar = avatar;
+    if (bio !== undefined) updates.bio = bio;
+    if (isPublic !== undefined) updates.isPublic = isPublic;
+    if (privacySettings !== undefined) updates.privacySettings = privacySettings;
+    if (academic !== undefined) updates.academic = academic;
+    if (socialProfiles !== undefined) updates.socialProfiles = socialProfiles;
 
     const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
     if (!user) {

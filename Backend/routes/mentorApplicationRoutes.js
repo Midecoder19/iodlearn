@@ -3,7 +3,7 @@ const MentorApplication = require("../models/MentorApplication");
 const User = require("../models/User");
 const { verifyToken } = require("../middleware/verifyToken");
 const sendMail = require("../utils/sendMail");
-const { mentorApplicationTemplate, mentorApprovedTemplate, mentorRejectedTemplate } = require("../utils/emailTemplates");
+const { mentorApplicationTemplate, mentorApprovedTemplate, mentorRejectedTemplate, mentorApplicationReceivedTemplate } = require("../utils/emailTemplates");
 
 const router = express.Router();
 
@@ -69,6 +69,19 @@ router.post("/apply", verifyToken, async (req, res) => {
       console.log(`Mentor application notification sent to admin at ${adminEmail}`);
     } catch (emailErr) {
       console.error("Failed to send admin notification email:", emailErr);
+      // Don't fail the request if email fails
+    }
+
+    // Send confirmation email to applicant
+    try {
+      await sendMail({
+        to: email,
+        subject: "Your Mentor Application Has Been Received - Iodlearn",
+        html: mentorApplicationReceivedTemplate(fullName, email)
+      });
+      console.log(`Confirmation email sent to applicant: ${email}`);
+    } catch (emailErr) {
+      console.error("Failed to send applicant confirmation email:", emailErr);
       // Don't fail the request if email fails
     }
 

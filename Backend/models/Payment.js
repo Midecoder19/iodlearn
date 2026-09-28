@@ -67,51 +67,6 @@ paymentSchema.pre("save", function(next) {
 paymentSchema.index({ paystackRef: 1 });
 paymentSchema.index({ paymentStatus: 1, createdAt: -1 });
 
-paymentSchema.methods.verifyAndCredit = async function(gatewayData) {
-  if (this.paymentStatus !== "pending") {
-    throw new Error("Payment already processed");
-  }
-  
-  this.paymentStatus = "success";
-  this.paymentVerifiedAt = new Date();
-  this.gatewayResponse = gatewayData;
-  
-  if (gatewayData.channel) {
-    this.channel = gatewayData.channel;
-  }
-  
-  await this.save();
-  
-  const User = mongoose.model("User");
-  const Course = mongoose.model("Course");
-  const Wallet = mongoose.model("Wallet");
-  
-  await User.findByIdAndUpdate(this.user, {
-    $addToSet: { 
-      enrolledCourses: this.course, 
-      purchasedCourses: this.course 
-    }
-  });
-  
-  await Course.findByIdAndUpdate(this.course, {
-    $addToSet: { enrolledStudents: this.user }
-  });
-  
-  let wallet = await Wallet.findOne({ user: this.mentor });
-  if (!wallet) {
-    wallet = new Wallet({ user: this.mentor });
-    await wallet.save();
-  }
-  
-  await wallet.addEarning(
-    this.tutorEarnings,
-    `Course payment: ${this.transactionRef}`,
-    this._id
-  );
-  
-  return this;
-};
-
 paymentSchema.methods.processRefund = async function(refundAmount, refundReason, adminId) {
   if (this.paymentStatus !== "success") {
     throw new Error("Can only refund successful payments");

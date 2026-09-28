@@ -38,10 +38,6 @@ if (process.env.NODE_ENV !== "production") {
     console.log("✅ Environment Variables Loaded: All required variables found");
 }
 
-connectDB();
-// Redis connection - disabled for now, uncomment and configure for production
-// connectRedis();
-
 const app = express();
 
 // Enhanced security headers
@@ -149,6 +145,7 @@ app.use("/api/search", searchRoutes);
 app.use("/api/stats", require("./routes/statsRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/mentor-application", require("./routes/mentorApplicationRoutes"));
+app.use("/api/contact", require("./routes/contactRoutes"));
 
 // ✅ Seed database endpoint (for initial deployment)
 app.get("/api/seed", async (req, res) => {
@@ -268,10 +265,34 @@ app.use((err, req, res, next) => {
   }
 });
 
+// Initialize database connection and start server
+let dbConnected = false;
+const initDB = async () => {
+  try {
+    await connectDB();
+    dbConnected = true;
+    console.log("🚀 MongoDB Connected... 🚀");
+  } catch (err) {
+    console.error("MongoDB connection error:", err.message);
+    dbConnected = false;
+    process.exit(1);
+  }
+};
+
 const PORT = process.env.PORT || 9000;
-console.log(`📡 Attempting to start server on port ${PORT}...`);
-server.listen(PORT, () => {
-  console.log(`🚀 Server successfully running on http://localhost:${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📦 Database: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '❌ Not connected'}`);
+
+const startServer = async () => {
+  await initDB();
+  
+  console.log(`📡 Attempting to start server on port ${PORT}...`);
+  server.listen(PORT, () => {
+    console.log(`🚀 Server successfully running on http://localhost:${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📦 Database: ${dbConnected ? '✅ Connected' : '❌ Not connected'}`);
+  });
+};
+
+startServer().catch((err) => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
 });

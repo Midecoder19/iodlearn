@@ -72,7 +72,7 @@ const UploadPDF = () => {
       subject.trim() === "" ||
       unit.trim() === ""
     ) {
-      toast.error("⚠️ All fields are required!");
+      toast.error("All fields are required!");
       return;
     }
 
@@ -87,7 +87,7 @@ const UploadPDF = () => {
       unit,
     }).toString();
 
-    const toastId = toast.loading("⏳ Preparing upload...");
+    const toastId = toast.loading("Preparing upload...");
 
     progressInterval = setInterval(() => {
       simulatedProgress += 5;
@@ -111,7 +111,7 @@ const UploadPDF = () => {
       clearInterval(progressInterval);
       setProgress(100);
 
-      toast.success("✅ Notes uploaded successfully!", {
+      toast.success("Notes uploaded successfully!", {
         id: toastId,
         duration: 4000,
       });

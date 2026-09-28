@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Trash2, MoreVertical, ChevronDown, User, GraduationCap, Shield, Activity, Calendar, Mail } from "lucide-react";
+import { Search, Filter, Trash2, MoreVertical, ChevronDown, User, GraduationCap, Shield, Activity, Calendar, Mail, RotateCcw, X } from "lucide-react";
 import { adminAPI } from "../utils/lmsApi";
 import toast from "react-hot-toast";
 
@@ -33,6 +33,16 @@ const UserManagement = () => {
             toast.success("User deleted");
         } catch (err) {
             toast.error("Failed to delete user");
+        }
+    };
+
+    const handlePasswordReset = async (userId, userEmail) => {
+        if (!window.confirm(`Send password reset email to ${userEmail}?`)) return;
+        try {
+            await adminAPI.triggerPasswordReset(userId);
+            toast.success("Password reset email sent successfully");
+        } catch (err) {
+            toast.error(err.response?.data?.error || "Failed to send password reset email");
         }
     };
 
@@ -150,6 +160,13 @@ const UserManagement = () => {
                                                     <MoreVertical size={18} />
                                                 </button>
                                                 <button
+                                                    onClick={() => handlePasswordReset(user._id, user.email)}
+                                                    className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition"
+                                                    title="Trigger password reset"
+                                                >
+                                                    <RotateCcw size={18} />
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(user._id)}
                                                     className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
                                                     title="Delete user"
@@ -178,8 +195,9 @@ const UserManagement = () => {
                             <button
                                 onClick={() => setShowUserModal(false)}
                                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                                aria-label="Close"
                             >
-                                ✕
+                                <X size={16} />
                             </button>
                         </div>
                         

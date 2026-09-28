@@ -163,35 +163,37 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
     }
 
     .otp-code {
-      display: inline-flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      justify-content: center;
+      /* Email-safe: table layout replaces flexbox, which most email
+         clients (Outlook desktop, many webmail clients) do not support. */
+      margin: 0 auto;
+      border-collapse: separate;
+      border-spacing: 6px;
     }
 
-    .otp-digit {
-      width: 3rem;
-      height: 4rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 16px;
-      background: #ffffff;
-      border: 2px solid rgba(79, 70, 229, 0.3);
-      font-size: 28px;
+    .otp-code td {
+      width: 44px;
+      height: 56px;
+      text-align: center;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 30px;
       font-weight: 800;
       color: #312e81;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
-      transition: transform 0.2s ease;
+      background: #ffffff;
+      border: 2px solid rgba(79, 70, 229, 0.35);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
     }
 
     .otp-code-large {
-      font-size: 48px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 40px;
       font-weight: 800;
       color: #4f46e5;
-      letter-spacing: 0.5rem;
+      letter-spacing: 0.35rem;
       text-align: center;
       margin: 1.5rem 0;
+      word-break: keep-all;
+      white-space: nowrap;
     }
 
     .button {
@@ -266,14 +268,16 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
         padding: 2rem 1.5rem;
       }
 
-      .otp-digit {
-        width: 2.8rem;
-        height: 3.6rem;
-        font-size: 24px;
+      .otp-code td {
+        width: 38px;
+        height: 50px;
+        font-size: 26px;
+        border-spacing: 4px;
       }
 
       .otp-code-large {
-        font-size: 36px;
+        font-size: 32px;
+        letter-spacing: 0.28rem;
       }
     }
   </style>
@@ -290,9 +294,11 @@ const otpHtmlTemplate = (otp, name = "Learner", verifyLink = "https://iodlearn.v
       
       <div class="otp-panel">
         <p>Your Verification Code</p>
-        <div class="otp-code">
-          ${otp.split("").map((digit) => `<div class="otp-digit">${digit}</div>`).join("")}
-        </div>
+        <table class="otp-code" role="presentation">
+          <tr>
+            ${otp.split("").map((digit) => `<td>${digit}</td>`).join("")}
+          </tr>
+        </table>
       </div>
       
       <p style="text-align: center; margin: 1.5rem 0; color: #6b7280; font-size: 14px;">Or use this code:</p>
@@ -594,10 +600,258 @@ const mentorRejectedTemplate = (fullName, adminNotes = "") => `
 </html>
 `;
 
+const mentorApplicationReceivedTemplate = (fullName, email) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mentor Application Received</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: #f4f6fb;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 32px auto;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 28px 80px rgba(31, 41, 55, 0.08);
+      background: linear-gradient(180deg, #ffffff 0%, #f7f8fb 100%);
+    }
+
+    .top-bar {
+      padding: 2.5rem 2rem;
+      background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+      color: #ffffff;
+      text-align: center;
+    }
+
+    .top-bar h2 {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: 0.02em;
+      font-weight: 800;
+    }
+
+    .top-bar p {
+      margin: 0.75rem auto 0;
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.95);
+      max-width: 520px;
+      line-height: 1.5;
+    }
+
+    .body {
+      padding: 2.5rem 2rem;
+      color: #1f2937;
+      line-height: 1.7;
+    }
+
+    .body h3 {
+      margin: 0 0 1rem;
+      font-size: 24px;
+      color: #111827;
+      font-weight: 700;
+    }
+
+    .body p {
+      margin: 0 0 1.25rem;
+      font-size: 16px;
+      color: #374151;
+    }
+
+    .status-panel {
+      margin: 2rem 0;
+      padding: 2rem;
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+      border-radius: 20px;
+      border: 2px solid rgba(79, 70, 229, 0.2);
+      text-align: center;
+    }
+
+    .status-panel p {
+      margin: 0 0 1rem;
+      color: #4338ca;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .status-badge {
+      display: inline-block;
+      background: #4f46e5;
+      color: #ffffff;
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+    }
+
+    .details-box {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: #f9fafb;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .details-box h4 {
+      margin: 0 0 1rem;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .details-box p {
+      margin: 0.5rem 0;
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .details-box strong {
+      color: #111827;
+    }
+
+    .next-steps {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: #f0fdf4;
+      border-radius: 16px;
+      border: 1px solid #86efac;
+    }
+
+    .next-steps h4 {
+      margin: 0 0 1rem;
+      color: #166534;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .next-steps ul {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+
+    .next-steps li {
+      margin: 0.5rem 0;
+      color: #166534;
+      font-size: 14px;
+    }
+
+    .support {
+      margin-top: 2.5rem;
+      padding: 1.75rem;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .support h4 {
+      margin: 0 0 0.75rem;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .support p {
+      margin: 0;
+      color: #4b5563;
+      font-size: 14px;
+    }
+
+    .footer {
+      padding: 2rem 2rem 2.5rem;
+      font-size: 13px;
+      color: #6b7280;
+      text-align: center;
+      border-top: 1px solid rgba(15, 23, 42, 0.05);
+    }
+
+    .footer a {
+      color: #4f46e5;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    @media screen and (max-width: 600px) {
+      .container {
+        margin: 16px;
+      }
+
+      .top-bar {
+        padding: 2rem 1.5rem;
+      }
+
+      .top-bar h2 {
+        font-size: 26px;
+      }
+
+      .body {
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <h2>Application Received!</h2>
+      <p>Thank you for applying to become a mentor on Iodlearn. We've received your application and it's now under review.</p>
+    </div>
+    <div class="body">
+      <h3>Hi ${fullName},</h3>
+      <p>Thank you for your interest in joining Iodlearn as a mentor! We've successfully received your mentor application.</p>
+      
+      <div class="status-panel">
+        <p>Application Status</p>
+        <div class="status-badge">Under Review</div>
+      </div>
+      
+      <p>Your application has been submitted and is now pending review by our team. Here's what happens next:</p>
+      
+      <div class="next-steps">
+        <h4>What happens next?</h4>
+        <ul>
+          <li>Our review team will evaluate your application within 3-5 business days</li>
+          <li>You'll receive an email notification once a decision is made</li>
+          <li>If approved, you'll gain access to the mentor dashboard to create courses and conduct sessions</li>
+          <li>If we need more information, we'll reach out to you directly</li>
+        </ul>
+      </div>
+      
+      <div class="details-box">
+        <h4>Your Application Details</h4>
+        <p><strong>Name:</strong> ${fullName}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Submitted:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      </div>
+      
+      <div class="support">
+        <h4>Need help?</h4>
+        <p>If you have any questions about your application, contact us at <a href="mailto:iodlearn.com@gmail.com">iodlearn.com@gmail.com</a>.</p>
+      </div>
+    </div>
+    <div class="footer">
+      © 2026 Iodlearn. All rights reserved. | Learn, grow, and achieve with confidence.
+    </div>
+  </div>
+</body>
+</html>
+`;
+
 module.exports = {
   resetPasswordTemplate,
   otpHtmlTemplate,
   mentorApplicationTemplate,
   mentorApprovedTemplate,
-  mentorRejectedTemplate
+  mentorRejectedTemplate,
+  mentorApplicationReceivedTemplate
 };
