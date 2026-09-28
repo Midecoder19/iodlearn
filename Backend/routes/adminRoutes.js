@@ -9,6 +9,7 @@ const { verifyAdmin } = require("../middleware/verifyToken");
 const { validateMongoId, validatePagination } = require("../middleware/validation");
 const sendMail = require("../utils/sendMail");
 const { mentorApprovedTemplate, mentorRejectedTemplate } = require("../utils/emailTemplates");
+const { generateAndStoreResetToken } = require('../utils/passwordReset');
 const logger = require("../utils/logger"); 
 
 router.put('/users/:id/role', verifyAdmin, async (req, res) => {
@@ -30,6 +31,27 @@ router.put('/users/:id/role', verifyAdmin, async (req, res) => {
   } catch (err) {
     console.error("Error updating role:", err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post('/users/:id/password-reset', verifyAdmin, validateMongoId, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Use the SAME shared logic as the self-service forgot-password flow so
+    // the token generation, storage, and email can never drift apart.
+    await generateAndStoreResetToken(user, "admin");
+
+    console.log(`Password reset email triggered by admin for user: ${user.email}`);
+    res.json({ message: "Password reset email sent successfully" });
+  } catch (err) {
+    console.error("Admin password reset trigger error:", err);
+    res.status(500).json({ error: "Failed to trigger password reset" });
   }
 });
 
@@ -84,6 +106,43 @@ router.get('/mentors', verifyAdmin, validatePagination, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch mentors" });
+  }
+});
+
+router.put('/mentors/:id/commission-rate', verifyAdmin, validateMongoId, async (req, res) => {
+  try {
+    const { commissionRate } = req.body;
+    const mentorId = req.params.id;
+
+    if (commissionRate === undefined || commissionRate === null) {
+      return res.status(400).json({ error: "Commission rate is required" });
+    }
+
+    const rate = Number(commissionRate);
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      return res.status(400).json({ error: "Commission rate must be a number between 0 and 100" });
+    }
+
+    const mentor = await User.findOne({ _id: mentorId, role: "mentor", isMentorApproved: true });
+    if (!mentor) {
+      return res.status(404).json({ error: "Approved mentor not found" });
+    }
+
+    mentor.mentorProfile.commissionRate = rate;
+    await mentor.save();
+
+    res.json({ 
+      message: "Commission rate updated successfully", 
+      mentor: {
+        id: mentor._id,
+        name: mentor.name,
+        email: mentor.email,
+        commissionRate: mentor.mentorProfile.commissionRate
+      }
+    });
+  } catch (err) {
+    console.error("Error updating commission rate:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -289,7 +348,9 @@ router.put('/mentor-applications/:id/approve', verifyAdmin, async (req, res) => 
       bio: application.bio,
       expertise: application.expertise,
       experience: application.experience,
-      qualifications: application.qualifications,
+      // The User model stores qualifications as a String, but the application
+      // stores it as an array. Join so the cast never fails.
+      qualifications: Array.isArray(application.qualifications) ? application.qualifications.join(", ") : (application.qualifications || ""),
       linkedin: application.linkedin,
       twitter: application.twitter,
       portfolio: application.portfolio,
