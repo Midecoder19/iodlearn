@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
     setToken("");
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    toast.info("⏳ Session expired. Please log in again.");
+    toast.info("Session expired. Please log in again.");
   };
 
   // 🔐 Update User Data

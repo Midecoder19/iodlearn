@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { BACKEND_BASE } from "../utils/lmsApi";
 
 const Backurl = BACKEND_BASE;
@@ -274,7 +274,7 @@ const VerifyOTP = () => {
             onClick={() => navigate("/register")}
             className="text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
           >
-            ← Back to Register
+            <ArrowLeft size={14} className="mr-1" /> Back to Register
           </button>
         </div>
       </div>

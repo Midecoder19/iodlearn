@@ -1,6 +1,7 @@
 ﻿import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import {
     FaBook, FaGraduationCap, FaClock, FaCheckCircle,
     FaPlayCircle, FaExternalLinkAlt, FaShieldAlt, FaUser
@@ -157,7 +158,7 @@ const UserProfile = () => {
         >
             <div className="flex items-center justify-between mb-8">
                 <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight border-l-4 border-indigo-500 pl-4">My Courses</h3>
-                <Link to="/courses" className="text-sm font-bold text-indigo-500 hover:underline">Browse More Courses →</Link>
+                <Link to="/courses" className="text-sm font-bold text-indigo-500 hover:underline flex items-center gap-1">Browse More Courses <ArrowRight size={14} /></Link>
             </div>
 
             {loading ? (

@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { Rocket, UserPlus } from "lucide-react";
 import Breadcrumbs from "../Common/Breadcrumbs";
 
 function About() {
@@ -25,7 +26,7 @@ function About() {
 
         <motion.div {...fadeUp} className="relative z-10">
           <span className="inline-block mb-4 px-4 py-1 rounded-full bg-indigo-100 text-indigo-700 dark:bg-white/10 dark:text-indigo-100 text-xs tracking-wide font-medium">
-            🚀 Driven by Students, For Students
+            <Rocket size={14} className="inline-block mr-1.5 align-text-bottom" /> Driven by Students, For Students
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
             About Iodlearn
@@ -158,24 +159,24 @@ function About() {
             </motion.div>
 
             {/* You */}
-            <motion.div
-              {...fadeUp}
-              className="p-8 rounded-3xl bg-gray-50 border border-gray-100 border-dashed shadow-sm dark:bg-white/5 dark:border-white/10 flex flex-col items-center justify-center opacity-80 hover:opacity-100 transition"
+<motion.div
+            {...fadeUp}
+            className="p-8 rounded-3xl bg-gray-50 border border-gray-100 border-dashed shadow-sm dark:bg-white/5 dark:border-white/10 flex flex-col items-center justify-center opacity-80 hover:opacity-100 transition"
+          >
+            <div className="w-28 h-28 mx-auto rounded-full mb-6 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-gray-400">
+              <UserPlus size={48} />
+            </div>
+            <h3 className="text-2xl font-bold mb-1">You?</h3>
+            <p className="text-gray-600 dark:text-gray-400 font-medium mb-4">
+              Future Contributor
+            </p>
+            <Link
+              to="/register"
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/30"
             >
-              <div className="w-28 h-28 mx-auto rounded-full mb-6 bg-gray-200 dark:bg-white/10 flex items-center justify-center text-4xl grayscale">
-                🚀
-              </div>
-              <h3 className="text-2xl font-bold mb-1">You?</h3>
-              <p className="text-gray-600 dark:text-gray-400 font-medium mb-4">
-                Future Contributor
-              </p>
-              <Link
-                to="/register"
-                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/30"
-              >
-                Join Us
-              </Link>
-            </motion.div>
+              Join Us
+            </Link>
+          </motion.div>
           </div>
         </div>
       </section>

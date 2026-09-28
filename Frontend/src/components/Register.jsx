@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext } from "../context/AuthContext";
-import { Eye, EyeOff, Sparkles, User, GraduationCap } from "lucide-react";
+import { Eye, EyeOff, Sparkles, User, GraduationCap, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { BACKEND_BASE } from "../utils/lmsApi";
 

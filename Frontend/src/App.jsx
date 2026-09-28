@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "react-hot-toast";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import CookieConsent from "react-cookie-consent";
+import { Cookie } from "lucide-react";
 
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -40,8 +41,10 @@ function App() {
 
           <CookieConsent
             location="bottom"
-            buttonText="Accept Cookies"
-            declineButtonText="Decline"
+            acceptOnScroll
+            acceptOnScrollTimeout={15000}
+            acceptText="Accept Cookies"
+            declineText="Decline"
             cookieName="iodlearn-cookie-consent"
             style={{
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -77,7 +80,7 @@ function App() {
               console.log("Cookies declined");
             }}
           >
-            🍪 This website uses cookies to improve your experience. By accepting, you agree to our use of cookies.{" "}
+            <Cookie className="inline-block w-4 h-4 mr-1 align-text-bottom" /> This website uses cookies to improve your experience. By accepting, you agree to our use of cookies.{" "}
             <a
               href="/privacy-policy"
               style={{ color: "#fff", textDecoration: "underline" }}

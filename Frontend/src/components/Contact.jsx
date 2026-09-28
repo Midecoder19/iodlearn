@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import SEO from "./SEO";
 import axios from "axios";
 import { BACKEND_BASE } from "../utils/lmsApi";
+import { SITE_INFO } from "../data/siteInfo";
 
 const Contact = () => {
   const { user } = useContext(AuthContext);
@@ -103,10 +104,10 @@ const Contact = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Email Us</h3>
                   <p className="text-gray-600 dark:text-gray-300 mt-1">
-                    support@iodlearn.com
+                    {SITE_INFO.email}
                   </p>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    We typically respond within 24 hours
+                    We typically respond within {SITE_INFO.supportHours}
                   </p>
                 </div>
               </div>
@@ -133,7 +134,7 @@ const Contact = () => {
                 <div>
                   <h3 className="font-semibold text-gray-900 dark:text-white">Business Inquiries</h3>
                   <p className="text-gray-600 dark:text-gray-300 mt-1">
-                    partnerships@iodlearn.com
+                    {SITE_INFO.partnershipsEmail}
                   </p>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">
                     For partnerships and enterprise solutions

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { courseAPI, mentorshipAPI, paymentAPI } from "../../utils/lmsApi";
 import { Link } from "react-router-dom";
-import { BookOpen, Clock, DollarSign, CheckCircle, Wallet, ArrowUpRight, TrendingUp } from "lucide-react";
+import { BookOpen, Clock, DollarSign, CheckCircle, Wallet, ArrowUpRight, TrendingUp, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 const MentorDashboard = () => {
@@ -240,12 +240,13 @@ const MentorDashboard = () => {
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold dark:text-white">Request Withdrawal</h3>
-              <button
+<button
                 onClick={() => setShowWithdrawModal(false)}
                 className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                ✕
-              </button>
+                aria-label="Close"
+            >
+                <X size={16} />
+            </button>
             </div>
             
             <div className="space-y-4">

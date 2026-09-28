@@ -6,7 +6,7 @@ import { AuthContext } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
 import { GoogleLogin } from "@react-oauth/google";
-import { Eye, EyeOff, Hand } from "lucide-react";
+import { Eye, EyeOff, Hand, Loader2 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import { motion } from "framer-motion";
 import { authAPI } from "../utils/lmsApi";
@@ -82,7 +82,7 @@ const Login = () => {
   }, [location, messageKey]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden text-gray-900 dark:text-white">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden text-gray-900 dark:text-white">
       {/* Background Blobs (matching Home.jsx) */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/20 blur-[120px] rounded-full pointer-events-none" />
@@ -94,15 +94,13 @@ const Login = () => {
         className="max-w-md w-full bg-white/50 dark:bg-black/40 p-8 rounded-3xl shadow-2xl border border-white/20 dark:border-white/10 backdrop-blur-xl relative z-10"
       >
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-indigo-900 dark:text-white mb-2">
-            Welcome Back! <Hand size={28} className="inline ml-2 text-amber-400" />
+          <h2 className="text-3xl font-extrabold text-indigo-900 dark:text-white mb-2 flex items-center justify-center">
+            Welcome Back! <Hand size={28} className="ml-2 text-amber-400" />
           </h2>
           <p className="text-gray-600 dark:text-gray-300 text-sm">
             Sign in to continue to your learning dashboard
           </p>
         </div>
-
-
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
@@ -154,13 +152,12 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <i className="ri-loader-4-line animate-spin text-xl"></i>
-                Logging in...
-              </span>
+              <>
+                <Loader2 size={18} className="animate-spin" /> Logging in...
+              </>
             ) : "Log In"}
           </button>
         </form>
@@ -183,7 +180,6 @@ const Login = () => {
             width="100%"
           />
         </div>
-
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account yet?
