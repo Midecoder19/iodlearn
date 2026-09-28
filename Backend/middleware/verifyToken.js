@@ -60,6 +60,26 @@ const verifyMentor = async (req, res, next) => {
   });
 };
 
+/**
+ * Allows an approved mentor OR an admin to proceed. Used for course creation
+ * where the product rule is: "approved mentors may create their own courses;
+ * admins may create courses on behalf of anyone." Students and unapproved
+ * mentors are rejected.
+ */
+const verifyMentorOrAdmin = async (req, res, next) => {
+  verifyToken(req, res, async () => {
+    try {
+      if (req.user.role === "admin") return next();
+      const User = require("../models/User");
+      const user = await User.findById(req.user.id);
+      if (user && user.role === "mentor" && user.isMentorApproved) return next();
+      return res.status(403).json({ error: "Not authorized" });
+    } catch (err) {
+      return res.status(500).json({ error: "Authorization check failed" });
+    }
+  });
+};
+
 const verifyCourseAccess = async (req, res, next) => {
   try {
     const { courseId } = req.params;
@@ -125,6 +145,55 @@ const verifyCoursePurchase = async (req, res, next) => {
   }
 };
 
+/**
+ * Course-detail access guard. Public visitors may only read courses that are
+ * published. Draft/unpublished courses are visible only to the course owner
+ * (the mentor who created it) or an admin. This closes the gap where the
+ * list endpoint filtered on isPublished but the detail endpoint did not.
+ *
+ * Runs verifyToken optionally so unauthenticated callers are still handled
+ * (they simply have no req.user and are treated as public visitors).
+ */
+const verifyCourseOwnerOrAdmin = async (req, res, next) => {
+  try {
+    const Course = require("../models/Course");
+    const courseId = req.params.id || req.params.courseId;
+    if (!courseId) {
+      return res.status(400).json({ error: "Course ID is required" });
+    }
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    if (course.isPublished) return next();
+
+    // Unpublished: only the course owner or an admin may view it.
+    if (req.user && req.user.role === "admin") return next();
+    if (req.user && req.user.id && course.mentor && course.mentor.toString() === req.user.id) {
+      return next();
+    }
+
+    return res.status(403).json({ error: "Access denied. Course not published." });
+  } catch (err) {
+    console.error("Course access verification error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+const verifyCourseDetail = (req, res, next) => {
+  // verifyToken returns 401 when no token is present, which would block
+  // unauthenticated public visitors from reading published courses. Skip the
+  // token check entirely when the Authorization header is absent and let
+  // verifyCourseOwnerOrAdmin decide based on req.user (which will be
+  // undefined for public callers).
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return verifyCourseOwnerOrAdmin(req, res, next);
+  }
+  verifyToken(req, res, () => verifyCourseOwnerOrAdmin(req, res, next));
+};
+
 module.exports = { 
    verifyToken, 
    verifyAdmin,
@@ -132,5 +201,8 @@ module.exports = {
    verifyMentor,
    verifyAuth,
    verifyCourseAccess,
-   verifyCoursePurchase
+   verifyCoursePurchase,
+   verifyMentorOrAdmin,
+   verifyCourseOwnerOrAdmin,
+   verifyCourseDetail
 };

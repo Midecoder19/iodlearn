@@ -33,7 +33,10 @@ describe('Backend Integration Tests', () => {
     it('authRoutes2.js should export a valid express router', () => {
       const authRoutes = require('../routes/authRoutes2');
       expect(authRoutes).toBeTruthy();
-      expect(typeof authRoutes).toBe('object');
+      // express.Router() is a function, not a plain object — that is the
+      // correct type for a mounted router.
+      expect(typeof authRoutes).toBe('function');
+      expect(typeof authRoutes.use).toBe('function');
     });
   });
 
@@ -41,8 +44,9 @@ describe('Backend Integration Tests', () => {
     it('validation middleware should exist', () => {
       const validation = require('../middleware/validation');
       expect(validation).toBeTruthy();
-      expect(typeof validation.validateLogin).toBe('function');
-      expect(typeof validation.validateRegister).toBe('function');
+      // express-validator chains are arrays of middleware, not bare functions.
+      expect(Array.isArray(validation.validateLogin)).toBe(true);
+      expect(Array.isArray(validation.validateRegister)).toBe(true);
     });
   });
 
@@ -63,11 +67,14 @@ describe('Backend Integration Tests', () => {
   });
 
   describe('Error Handling', () => {
-    it('generic server errors should return "Server error" message', () => {
-      // Verify error handler pattern in auth routes
+it('generic server errors should return "Server error" message', () => {
+      // Verify error handler pattern in auth routes. Resolve relative to the
+      // test file's own directory so the test is independent of the shell's
+      // working directory.
       const fs = require('fs');
-      const authRoutesCode = fs.readFileSync('../routes/authRoutes2.js', 'utf8');
-      
+      const path = require('path');
+      const authRoutesCode = fs.readFileSync(path.join(__dirname, '..', 'routes', 'authRoutes2.js'), 'utf8');
+
       // Check that all 500 errors use generic message
       const hasGenericMessage = authRoutesCode.includes("'Server error'");
       expect(hasGenericMessage).toBe(true);

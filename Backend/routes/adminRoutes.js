@@ -147,25 +147,25 @@ router.put('/mentors/:id/commission-rate', verifyAdmin, validateMongoId, async (
 });
 
 router.delete('/users/:id', verifyAdmin, validateMongoId, async (req, res) => {
-    try {
-      const userId = req.params.id;
+  try {
+    const userId = req.params.id;
 
-      const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ error: "User not found" });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-      // Refuse to delete a user who has financial history — deleting them
-      // would orphan payment records and leave a dangling wallet balance.
-      // Suggest suspend instead; there is no suspend endpoint yet.
-      const [paymentCount, wallet] = await Promise.all([
-        Payment.countDocuments({ user: userId }),
-        Wallet.findOne({ user: userId })
-      ]);
+    // Refuse to delete a user who has financial history — deleting them
+    // would orphan payment records and leave a dangling wallet balance.
+    // Suspend instead; there is no suspend endpoint yet.
+    const [paymentCount, wallet] = await Promise.all([
+      Payment.countDocuments({ user: userId }),
+      Wallet.findOne({ user: userId })
+    ]);
 
-      const walletBalance = (wallet ? wallet.pendingBalance + wallet.availableBalance : 0);
-      if (paymentCount > 0 || walletBalance > 0) {
-        return res.status(400).json({
-          error: "Cannot delete user with financial history",
-          detail: `User has ${paymentCount} payment record(s) and a wallet balance of ${walletBalance} kobo.`,
+    const walletBalance = (wallet ? wallet.pendingBalance + wallet.availableBalance : 0);
+    if (paymentCount > 0 || walletBalance > 0) {
+      return res.status(400).json({
+        error: "Cannot delete user with financial history",
+        detail: `User has ${paymentCount} payment record(s) and a wallet balance of ${walletBalance} kobo.`,
           suggestion: "Suspend the user instead. A suspend endpoint is not yet implemented."
         });
       }
@@ -174,6 +174,28 @@ router.delete('/users/:id', verifyAdmin, validateMongoId, async (req, res) => {
       res.status(200).json({ message: "User deleted", user: deletedUser });
     } catch (err) {
       res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  router.put('/users/:id/suspend', verifyAdmin, validateMongoId, async (req, res) => {
+    try {
+      const { reason, suspended } = req.body;
+      const user = await User.findById(req.params.id);
+      if (!user) return res.status(404).json({ error: "User not found" });
+      if (req.user.id === user._id.toString()) {
+        return res.status(400).json({ error: "Cannot suspend your own account" });
+      }
+      user.isSuspended = suspended !== false;
+      user.suspendReason = reason || "";
+      await user.save();
+      res.json({
+        message: `User ${user.isSuspended ? "suspended" : "unsuspended"}`,
+        isSuspended: user.isSuspended,
+        suspendReason: user.suspendReason
+      });
+    } catch (err) {
+      console.error("Suspend user error:", err);
+      res.status(500).json({ error: "Failed to suspend user" });
     }
   });
 
@@ -472,7 +494,7 @@ router.get('/payments', verifyAdmin, validatePagination, async (req, res) => {
       .reduce((sum, p) => sum + p.amount, 0);
     const totalCommission = payments
       .filter(p => p.paymentStatus === "success")
-      .reduce((sum, p) => sum + (p.adminCommission || 0), 0);
+      .reduce((sum, p) => sum + (p.commissionAmount || 0), 0);
 
     res.json({
       payments,
@@ -651,12 +673,24 @@ router.post('/withdrawals/:withdrawalId/process', verifyAdmin, async (req, res) 
       if (user && withdrawal.bankDetails.accountNumber && withdrawal.bankDetails.bankName) {
         try {
           const axios = require("axios");
+          // Paystack transfer API requires a valid recipient_code, not an
+          // account number. Falling back to accountNumber silently fails
+          // transfers. Require a resolved recipient code and surface a clear
+          // error when it is missing so the withdrawal can be retried later.
+          const recipientCode = withdrawal.bankDetails.recipient_code;
+          if (!recipientCode) {
+            logger.error("Withdrawal missing recipient_code", { withdrawalId });
+            return res.status(400).json({
+              error: "Missing recipient_code",
+              detail: "No Paystack recipient code is stored for this withdrawal. Create a recipient first."
+            });
+          }
           const transferResponse = await axios.post(
             "https://api.paystack.co/transfer",
             {
               source: "balance",
               amount: withdrawal.amount * 100, // Convert to kobo
-              recipient: withdrawal.bankDetails.recipient_code || withdrawal.bankDetails.accountNumber,
+              recipient: recipientCode,
               reason: `Withdrawal for ${user.name}`,
               reference: `WTH_${withdrawalId}_${Date.now()}`
             },

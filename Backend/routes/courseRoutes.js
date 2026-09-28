@@ -3,12 +3,12 @@ const Payment = require("../models/Payment");
 const Course = require("../models/Course");
 const User = require("../models/User");
 const UserProgress = require("../models/UserProgress");
-const { verifyToken, verifyMentor, verifyAdmin, verifyCourseAccess, verifyCoursePurchase } = require("../middleware/verifyToken");
+const { verifyToken, verifyMentor, verifyAdmin, verifyCourseAccess, verifyCoursePurchase, verifyCourseDetail, verifyMentorOrAdmin } = require("../middleware/verifyToken");
 const { validateCourse, validateLesson, validateMongoId, validateReview, validatePagination } = require("../middleware/validation");
 
 const router = express.Router();
 
-router.post("/", verifyToken, validateCourse, async (req, res) => {
+router.post("/", verifyMentorOrAdmin, validateCourse, async (req, res) => {
    try {
      const userId = req.user.id;
      const user = await User.findById(userId);
@@ -81,32 +81,44 @@ router.put("/:id", verifyToken, validateMongoId, async (req, res) => {
  });
 
 router.delete("/:id", verifyToken, validateMongoId, async (req, res) => {
-   try {
-     const userId = req.user.id;
-     const courseId = req.params.id;
+  try {
+    const userId = req.user.id;
+    const courseId = req.params.id;
 
-     const course = await Course.findById(courseId);
-     if (!course) {
-       return res.status(404).json({ error: "Course not found" });
-     }
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
 
-     // Only allow mentors/admins or course mentors to delete
-     if (req.user.role !== "admin" && course.mentor.toString() !== userId) {
-       return res.status(403).json({ error: "Not authorized to delete this course" });
-     }
+    // Only allow mentors/admins or course mentors to delete
+    if (req.user.role !== "admin" && course.mentor.toString() !== userId) {
+      return res.status(403).json({ error: "Not authorized to delete this course" });
+    }
 
-     await Course.findByIdAndDelete(courseId);
+    // Refuse to delete a course that has generated financial records. Deleting
+    // it would orphan Payment.course references and leave wallet transactions
+    // pointing at a non-existent course.
+    const paymentCount = await Payment.countDocuments({ course: courseId });
+    if (paymentCount > 0) {
+      return res.status(400).json({
+        error: "Cannot delete course with financial history",
+        detail: `Course has ${paymentCount} payment record(s). Unpublish it instead.`,
+        suggestion: "Set isPublished=false to hide the course from students while preserving financial records."
+      });
+    }
 
-     await User.findByIdAndUpdate(userId, {
-       $pull: { createdCourses: courseId }
-     });
+    await Course.findByIdAndDelete(courseId);
 
-     res.json({ message: "Course deleted successfully" });
-   } catch (err) {
-     console.error("Delete course error:", err);
-     res.status(500).json({ error: "Failed to delete course" });
-   }
- });
+    await User.findByIdAndUpdate(userId, {
+      $pull: { createdCourses: courseId }
+    });
+
+    res.json({ message: "Course deleted successfully" });
+  } catch (err) {
+    console.error("Delete course error:", err);
+    res.status(500).json({ error: "Failed to delete course" });
+  }
+});
 
 router.post("/:id/lessons", verifyToken, verifyMentor, validateMongoId, validateLesson, async (req, res) => {
   try {
@@ -426,7 +438,7 @@ router.get("/:id/enrolled", verifyToken, validateMongoId, async (req, res) => {
   }
 });
 
-router.get("/:id", validateMongoId, async (req, res) => {
+router.get("/:id", validateMongoId, verifyCourseDetail, async (req, res) => {
   try {
     const course = await Course.findById(req.params.id)
       .populate("mentor", "name avatar mentorProfile")
@@ -438,19 +450,6 @@ router.get("/:id", validateMongoId, async (req, res) => {
   } catch (err) {
     console.error("Get course by id error:", err);
     res.status(500).json({ error: "Failed to fetch course" });
-  }
-});
-
-router.get("/my-courses", verifyToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).populate("purchasedCourses", "title description thumbnail price level category mentor");
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.json({ courses: user.purchasedCourses });
-  } catch (err) {
-    console.error("Get my courses error:", err);
-    res.status(500).json({ error: "Failed to fetch courses" });
   }
 });
 

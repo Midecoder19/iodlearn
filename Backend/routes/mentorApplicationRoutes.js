@@ -110,9 +110,16 @@ router.get("/my-application", verifyToken, async (req, res) => {
   }
 });
 
-router.get("/status/:userId", async (req, res) => {
+router.get("/status/:userId", verifyToken, async (req, res) => {
   try {
     const { userId } = req.params;
+
+    // Users may only inspect their own application status. Admins may query
+    // any user. This closes an IDOR where an unauthenticated caller could
+    // enumerate another user's private mentor-application state.
+    if (req.user.role !== "admin" && req.user.id !== userId) {
+      return res.status(403).json({ error: "Not authorized to view this application status" });
+    }
 
     const user = await User.findById(userId);
     if (!user) {

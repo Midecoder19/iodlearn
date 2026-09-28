@@ -129,6 +129,10 @@ router.post('/login', validateLogin, async (req, res) => {
       return res.status(400).json({ message: 'Please verify your email first' });
     }
 
+    if (user.isSuspended) {
+      return res.status(403).json({ message: 'Account suspended', reason: user.suspendReason || 'Contact support' });
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       await recordFailedLogin(email);

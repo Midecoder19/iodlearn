@@ -70,6 +70,8 @@ const userSchema = new mongoose.Schema(
     username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     usernameChanged: { type: Boolean, default: false },
     isPublic: { type: Boolean, default: false },
+    isSuspended: { type: Boolean, default: false, index: true },
+    suspendReason: { type: String, default: "" },
   },
   {
     timestamps: true,

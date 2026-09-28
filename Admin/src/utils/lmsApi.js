@@ -92,6 +92,7 @@ export const adminAPI = {
   getRevenue: (params) => api.get("/admin/revenue", { params }),
   updateMentorCommissionRate: (id, commissionRate) => api.put(`/admin/mentors/${id}/commission-rate`, { commissionRate }),
   triggerPasswordReset: (id) => api.post(`/admin/users/${id}/password-reset`),
+  suspendUser: (id, reason, suspended = true) => api.put(`/admin/users/${id}/suspend`, { reason, suspended }),
 };
 
 export const messageAPI = {

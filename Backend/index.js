@@ -13,6 +13,7 @@ const initSentry = require("./config/sentry");
 const { connectRedis, client: redisClient } = require("./config/redis");
 
 const searchRoutes = require("./routes/searchRoutes");
+const { verifyAdmin } = require("./middleware/verifyToken");
 
 dotenv.config();
 
@@ -36,6 +37,17 @@ if (missingEnvVars.length > 0) {
 // Sanitize production logs: avoid logging actual values.
 if (process.env.NODE_ENV !== "production") {
     console.log("✅ Environment Variables Loaded: All required variables found");
+}
+
+// ⚠️ Paystack key-mode guard. Real money flows only on live keys. If the
+// server is running in production with a test secret key, every payment
+// initialize/verify call silently no-ops against the sandbox and real users
+// believe they have paid. Warn loudly so this is caught before launch.
+if (process.env.NODE_ENV === "production" && String(process.env.PAYSTACK_SECRET_KEY).startsWith("sk_test_")) {
+    console.error("\n⚠️ FATAL ERROR: PAYSTACK_SECRET_KEY is a TEST key but NODE_ENV=production.");
+    console.error("   Real payments cannot be processed with sk_test_ keys.");
+    console.error("   Set PAYSTACK_SECRET_KEY to a live key (sk_live_...) before going live.\n");
+    process.exit(1);
 }
 
 const app = express();
@@ -147,8 +159,9 @@ app.use("/api/categories", require("./routes/categoryRoutes"));
 app.use("/api/mentor-application", require("./routes/mentorApplicationRoutes"));
 app.use("/api/contact", require("./routes/contactRoutes"));
 
-// ✅ Seed database endpoint (for initial deployment)
-app.get("/api/seed", async (req, res) => {
+// ✅ Seed database endpoint (admin only — unauthenticated callers must not
+// be able to trigger a destructive full-database seed from the public internet)
+app.get("/api/seed", verifyAdmin, async (req, res) => {
   const { spawn } = require("child_process");
   const path = require("path");
   
@@ -208,7 +221,6 @@ app.get("/api/seed", async (req, res) => {
 
 // New LMS Routes
 app.use("/api/courses", require("./routes/courseRoutes"));
-app.use("/api/payments/verify-callback", require("./routes/paymentRoutes")); // Webhook endpoint without rate limiter
 app.use("/api/payments", paymentLimiter, require("./routes/paymentRoutes"));
 app.use("/api/progress", require("./routes/progressRoutes"));
 app.use("/api/mentorship", require("./routes/mentorshipRoutes"));

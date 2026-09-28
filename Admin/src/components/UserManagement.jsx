@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Filter, Trash2, MoreVertical, ChevronDown, User, GraduationCap, Shield, Activity, Calendar, Mail, RotateCcw, X } from "lucide-react";
+import { Search, Filter, Trash2, MoreVertical, ChevronDown, User, GraduationCap, Shield, Activity, Calendar, Mail, RotateCcw, X, Ban, CheckCircle2 } from "lucide-react";
 import { adminAPI } from "../utils/lmsApi";
 import toast from "react-hot-toast";
 
@@ -43,6 +43,21 @@ const UserManagement = () => {
             toast.success("Password reset email sent successfully");
         } catch (err) {
             toast.error(err.response?.data?.error || "Failed to send password reset email");
+        }
+    };
+
+    const handleSuspend = async (user) => {
+        const reason = window.prompt(
+            user.isSuspended ? "Unsuspend reason (optional):" : "Reason for suspension (optional):",
+            user.isSuspended ? "" : ""
+        );
+        if (reason === null) return;
+        try {
+            const res = await adminAPI.suspendUser(user._id, reason, !user.isSuspended);
+            setUsers(users.map(u => u._id === user._id ? { ...u, isSuspended: res.data.isSuspended, suspendReason: res.data.suspendReason } : u));
+            toast.success(res.data.message);
+        } catch (err) {
+            toast.error(err.response?.data?.error || "Failed to update suspension status");
         }
     };
 
@@ -133,15 +148,18 @@ const UserManagement = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                {getRoleIcon(user.role)}
-                                                <span className="text-sm capitalize">{user.role}</span>
-                                                {user.isMentorApproved && (
-                                                    <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Approved</span>
-                                                )}
-                                            </div>
-                                        </td>
+<td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                                {getRoleIcon(user.role)}
+                                <span className="text-sm capitalize">{user.role}</span>
+                                {user.isMentorApproved && (
+                                    <span className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Approved</span>
+                                )}
+                                {user.isSuspended && (
+                                    <span className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Suspended</span>
+                                )}
+                            </div>
+                        </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-0.5 text-xs rounded-full ${activity.color}`}>
                                                 {activity.status}
@@ -150,31 +168,44 @@ const UserManagement = () => {
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {new Date(user.createdAt).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleViewUser(user)}
-                                                    className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition"
-                                                    title="View details"
-                                                >
-                                                    <MoreVertical size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handlePasswordReset(user._id, user.email)}
-                                                    className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition"
-                                                    title="Trigger password reset"
-                                                >
-                                                    <RotateCcw size={18} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(user._id)}
-                                                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
-                                                    title="Delete user"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </div>
-                                        </td>
+<td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                                <button
+                                    onClick={() => handleViewUser(user)}
+                                    className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-lg transition"
+                                    title="View details"
+                                >
+                                    <MoreVertical size={18} />
+                                </button>
+                                <button
+                                    onClick={() => handlePasswordReset(user._id, user.email)}
+                                    className="p-2 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition"
+                                    title="Trigger password reset"
+                                >
+                                    <RotateCcw size={18} />
+                                </button>
+                                {user.role !== "admin" && (
+                                    <button
+                                        onClick={() => handleSuspend(user)}
+                                        className={`p-2 rounded-lg transition ${
+                                            user.isSuspended
+                                                ? "text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10"
+                                                : "text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10"
+                                        }`}
+                                        title={user.isSuspended ? "Unsuspend user" : "Suspend user"}
+                                    >
+                                        {user.isSuspended ? <CheckCircle2 size={18} /> : <Ban size={18} />}
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => handleDelete(user._id)}
+                                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
+                                    title="Delete user"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+                        </td>
                                     </tr>
                                 );
                             })}
@@ -228,6 +259,18 @@ const UserManagement = () => {
                                     <p className="font-medium dark:text-white">{new Date(selectedUser.createdAt).toLocaleDateString()}</p>
                                 </div>
                             </div>
+
+                            {selectedUser.isSuspended && (
+                                <div className="bg-red-50 dark:bg-red-500/10 p-4 rounded-xl border border-red-200 dark:border-red-500/20">
+                                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium mb-1">
+                                        <Ban size={14} />
+                                        Account Suspended
+                                    </div>
+                                    <p className="text-sm text-red-600 dark:text-red-300">
+                                        {selectedUser.suspendReason || "No reason provided"}
+                                    </p>
+                                </div>
+                            )}
 
                             {selectedUser.mentorProfile && (
                                 <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-xl">
