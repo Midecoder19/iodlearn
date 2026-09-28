@@ -56,7 +56,7 @@ function Home() {
       />
       <main className="relative z-1 text-gray-900 dark:text-white overflow-hidden">
         {/* ================= HERO ================= */}
-        <section className="relative max-w-7xl mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-32">
+        <section className="relative min-h-[calc(100vh-4rem)] flex items-center max-w-7xl mx-auto px-6 py-12 md:py-16">
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-indigo-500/30 blur-[80px] rounded-full pointer-events-none z-0" />
           <div className="absolute top-20 -left-40 w-[400px] h-[400px] bg-pink-500/20 blur-[80px] rounded-full pointer-events-none z-0" />
 
@@ -100,6 +100,64 @@ function Home() {
               </motion.div>
             </div>
           </BlurFade>
+        </section>
+
+        {/* ================= HOW IT WORKS ================= */}
+        <section className="max-w-7xl mx-auto px-6 py-20">
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+              <span className="text-sm font-semibold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">how it works</span>
+              <div className="h-1 w-12 bg-gradient-to-r from-purple-500 to-indigo-500"></div>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white">
+              Learn in Three Steps
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300 mt-3 max-w-2xl mx-auto">
+              From browsing courses to earning your certificate — everything is designed to be simple.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="relative text-center p-8 rounded-3xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:shadow-xl transition-all">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center shadow-lg">
+                1
+              </div>
+              <div className="w-16 h-16 mx-auto mb-6 mt-4 rounded-2xl bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
+                <BookOpen size={28} className="text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Pick a Course</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Browse our catalog of expert-led courses and find the one that fits your goals.
+              </p>
+            </div>
+
+            <div className="relative text-center p-8 rounded-3xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:shadow-xl transition-all">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 text-white font-bold flex items-center justify-center shadow-lg">
+                2
+              </div>
+              <div className="w-16 h-16 mx-auto mb-6 mt-4 rounded-2xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+                <Users size={28} className="text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Learn from a Mentor</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Join live and on-demand sessions with industry professionals who guide you every step.
+              </p>
+            </div>
+
+            <div className="relative text-center p-8 rounded-3xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:shadow-xl transition-all">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white font-bold flex items-center justify-center shadow-lg">
+                3
+              </div>
+              <div className="w-16 h-16 mx-auto mb-6 mt-4 rounded-2xl bg-green-100 dark:bg-green-500/20 flex items-center justify-center">
+                <Award size={28} className="text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Earn Your Certificate</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Complete your course, pass the assessment, and showcase your new skills.
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* ================= FEATURES ================= */}
@@ -182,9 +240,9 @@ function Home() {
             <div className="text-center mt-8">
               <button
                 onClick={() => navigate("/courses")}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition"
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition flex items-center gap-2 mx-auto"
               >
-                View All Courses →
+                View All Courses <ArrowRight size={18} />
               </button>
             </div>
           </section>
