@@ -9,6 +9,7 @@ const { validateMongoId, validatePayment } = require("../middleware/validation")
 const { verifyPaystackWebhook, jsonParserWithRawBody } = require("../middleware/verifyWebhook");
 const logger = require("../utils/logger");
 const crypto = require("crypto");
+const { confirmPayment } = require("../utils/confirmPayment");
 
 const router = express.Router();
 
@@ -265,64 +266,19 @@ router.post("/verify-callback", verifyPaystackWebhook, async (req, res) => {
       return res.status(200).json({ message: "Already processed" });
     }
     
-    if (payment.paymentStatus === "failed") {
+if (payment.paymentStatus === "failed") {
       if (session.inTransaction()) {
         await session.abortTransaction();
       }
       logger.warn("Payment already failed", { transactionRef, reference });
       return res.status(200).json({ message: "Already processed" });
     }
-    
-    payment.paymentStatus = "success";
-    payment.paystackRef = reference;
-    payment.channel = data.channel;
-    payment.paymentMethod = data.payment_method?.type;
-    payment.gatewayResponse = data;
-    payment.paymentVerifiedAt = new Date();
-    await payment.save({ session });
-    
-    await User.findByIdAndUpdate(payment.user, {
-      $addToSet: { 
-        enrolledCourses: payment.course, 
-        purchasedCourses: payment.course 
-      }
-    }).session(session);
-    
-    await Course.findByIdAndUpdate(payment.course, {
-      $addToSet: { enrolledStudents: payment.user }
-    }).session(session);
-    
-    // Credit wallet based on uploaded_by (using kobo values)
-    if (payment.uploaded_by === "admin") {
-      // Credit admin wallet with full amount (in kobo)
-      let adminWallet = await Wallet.findOne({ user: payment.mentor }).session(session);
-      if (!adminWallet) {
-        adminWallet = new Wallet({ user: payment.mentor });
-        await adminWallet.save({ session });
-      }
-      
-      await adminWallet.addEarning(
-        payment.platformEarnings, // Stored in kobo
-        `Admin course sale: ${payment.transactionRef}`,
-        payment._id,
-        session
-      );
-    } else {
-      // Credit mentor wallet with their share only (in kobo)
-      let wallet = await Wallet.findOne({ user: payment.mentor }).session(session);
-      if (!wallet) {
-        wallet = new Wallet({ user: payment.mentor });
-        await wallet.save({ session });
-      }
-      
-      await wallet.addEarning(
-        payment.tutorEarnings, // Stored in kobo
-        `Course sale: ${payment.transactionRef}`,
-        payment._id,
-        session
-      );
-    }
-    
+
+    // Shared confirmation logic: marks success, enrolls the student, and
+    // credits the correct wallet based on uploaded_by. Same function used by
+    // POST /verify so both paths can never drift apart.
+    await confirmPayment(payment, data, session);
+
     await session.commitTransaction();
     
     logger.payment("Webhook payment verified and credited", {
@@ -391,14 +347,31 @@ router.post("/verify", verifyToken, async (req, res) => {
 
     const verification = await verifyTransaction(reference || payment.paystackRef);
 
-    if (verification.data.status === "success") {
-      await payment.verifyAndCredit(verification.data);
-      
+// Paystack's verify endpoint returns an envelope shaped like:
+//   { status: true, data: { status: "success", ... } }
+// verifyTransaction() returns response.data — i.e. the envelope itself — so the
+// authoritative payment outcome is verification.data.status (a string:
+// "success" | "abandoned" | "failed"). The original code compared
+// verification.data.status === "success" which was correct; a later change to
+// verification.data?.data?.status was wrong (that path is always undefined)
+// and made every successful /verify call misclassify the payment as failed.
+const isSuccessful = verification.data?.status === "success";
+
+    if (isSuccessful) {
+      // Shared confirmation logic — same function used by /verify-callback so
+      // both paths branch on uploaded_by identically and write inside the
+      // transaction (session passed straight to addEarning, not { session }).
+      await confirmPayment(payment, verification.data, session);
+
       logger.payment("Callback payment verified", {
         transactionRef: payment.transactionRef,
         userId,
         courseId: payment.course
       });
+
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
 
       const course = await Course.findById(payment.course);
       res.json({
@@ -410,6 +383,10 @@ router.post("/verify", verifyToken, async (req, res) => {
       payment.paymentStatus = "failed";
       payment.gatewayResponse = verification.data;
       await payment.save();
+
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
       res.status(400).json({ message: "Payment verification failed" });
     }
   } catch (err) {
