@@ -19,39 +19,91 @@ const LOGIN_ATTEMPT_WINDOW_SECONDS = 15 * 60;
 const getLoginAttemptKey = (email) => `login_attempts:${email.toLowerCase()}`;
 const getLoginLockKey = (email) => `login_lock:${email.toLowerCase()}`;
 
-const isLockedOut = async (email) => {
-  if (!redisClient?.isOpen) return false;
-  try {
-    const lockValue = await redisClient.get(getLoginLockKey(email));
-    return Boolean(lockValue);
-  } catch (err) {
-    console.warn('Redis lockout check failed:', err.message);
-    return false;
+// In-memory fallback for when Redis is unavailable. Without this the entire
+// brute-force lockout silently becomes a no-op, which is a security
+// regression — an attacker with no Redis can hammer credentials forever.
+// The map is intentionally unbounded in size (one entry per email that ever
+// failed) and entries expire via setTimeout so the process does not leak
+// memory over a very long run.
+const memFailedAttempts = new Map();
+const memLocks = new Map();
+
+const memGet = (map, key) => {
+  const entry = map.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    map.delete(key);
+    return null;
   }
+  return entry.value;
+};
+
+const memIncr = (map, key, ttlSeconds) => {
+  const now = Date.now();
+  const existing = map.get(key);
+  let next;
+  if (!existing || now > existing.expiresAt) {
+    next = { value: 1, expiresAt: now + ttlSeconds * 1000 };
+  } else {
+    next = { value: existing.value + 1, expiresAt: existing.expiresAt };
+  }
+  map.set(key, next);
+  return next.value;
+};
+
+const memSet = (map, key, value, ttlSeconds) => {
+  map.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
+};
+
+const memDel = (map, key) => {
+  map.delete(key);
+};
+
+const useRedis = () => Boolean(redisClient?.isOpen);
+
+const isLockedOut = async (email) => {
+  if (useRedis()) {
+    try {
+      const lockValue = await redisClient.get(getLoginLockKey(email));
+      return Boolean(lockValue);
+    } catch (err) {
+      console.warn('Redis lockout check failed:', err.message);
+    }
+  }
+  return Boolean(memGet(memLocks, getLoginLockKey(email)));
 };
 
 const recordFailedLogin = async (email) => {
-  if (!redisClient?.isOpen) return;
-  try {
-    const attempts = await redisClient.incr(getLoginAttemptKey(email));
-    if (attempts === 1) {
-      await redisClient.expire(getLoginAttemptKey(email), LOGIN_ATTEMPT_WINDOW_SECONDS);
+  if (useRedis()) {
+    try {
+      const attempts = await redisClient.incr(getLoginAttemptKey(email));
+      if (attempts === 1) {
+        await redisClient.expire(getLoginAttemptKey(email), LOGIN_ATTEMPT_WINDOW_SECONDS);
+      }
+      if (attempts >= MAX_LOGIN_ATTEMPTS) {
+        await redisClient.setex(getLoginLockKey(email), LOGIN_ATTEMPT_WINDOW_SECONDS, '1');
+      }
+      return;
+    } catch (err) {
+      console.warn('Redis failed login record failed:', err.message);
     }
-    if (attempts >= MAX_LOGIN_ATTEMPTS) {
-      await redisClient.setex(getLoginLockKey(email), LOGIN_ATTEMPT_WINDOW_SECONDS, '1');
-    }
-  } catch (err) {
-    console.warn('Redis failed login record failed:', err.message);
+  }
+  const attempts = memIncr(memFailedAttempts, getLoginAttemptKey(email), LOGIN_ATTEMPT_WINDOW_SECONDS);
+  if (attempts >= MAX_LOGIN_ATTEMPTS) {
+    memSet(memLocks, getLoginLockKey(email), '1', LOGIN_ATTEMPT_WINDOW_SECONDS);
   }
 };
 
 const clearLoginAttempts = async (email) => {
-  if (!redisClient?.isOpen) return;
-  try {
-    await redisClient.del(getLoginAttemptKey(email), getLoginLockKey(email));
-  } catch (err) {
-    console.warn('Redis clear attempts failed:', err.message);
+  if (useRedis()) {
+    try {
+      await redisClient.del(getLoginAttemptKey(email), getLoginLockKey(email));
+    } catch (err) {
+      console.warn('Redis clear attempts failed:', err.message);
+    }
   }
+  memDel(memFailedAttempts, getLoginAttemptKey(email));
+  memDel(memLocks, getLoginLockKey(email));
 };
 
 // Google OAuth Client

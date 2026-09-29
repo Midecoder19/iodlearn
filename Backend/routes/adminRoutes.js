@@ -155,7 +155,7 @@ router.delete('/users/:id', verifyAdmin, validateMongoId, async (req, res) => {
 
     // Refuse to delete a user who has financial history — deleting them
     // would orphan payment records and leave a dangling wallet balance.
-    // Suspend instead; there is no suspend endpoint yet.
+    // Suspend instead; the suspend endpoint is available at PUT /users/:id/suspend.
     const [paymentCount, wallet] = await Promise.all([
       Payment.countDocuments({ user: userId }),
       Wallet.findOne({ user: userId })
@@ -166,7 +166,7 @@ router.delete('/users/:id', verifyAdmin, validateMongoId, async (req, res) => {
       return res.status(400).json({
         error: "Cannot delete user with financial history",
         detail: `User has ${paymentCount} payment record(s) and a wallet balance of ${walletBalance} kobo.`,
-          suggestion: "Suspend the user instead. A suspend endpoint is not yet implemented."
+          suggestion: "Suspend the user instead via PUT /users/:id/suspend."
         });
       }
 

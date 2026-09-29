@@ -438,7 +438,7 @@ router.get("/mentor-earnings", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const user = await User.findById(userId);
-    
+
     if (user.role !== "mentor" || !user.isMentorApproved) {
       return res.status(403).json({ message: "Not authorized" });
     }
@@ -452,6 +452,15 @@ router.get("/mentor-earnings", verifyToken, async (req, res) => {
         totalWithdrawn: 0,
         transactions: []
       });
+    }
+
+    // Release pending earnings into availableBalance before reporting so the
+    // dashboard and the withdrawal form always agree. Idempotent: if nothing
+    // is pending the balances are unchanged.
+    if (wallet.pendingBalance > 0) {
+      wallet.availableBalance += wallet.pendingBalance;
+      wallet.pendingBalance = 0;
+      await wallet.save();
     }
 
     res.json({
@@ -477,7 +486,19 @@ router.post("/withdraw", verifyToken, async (req, res) => {
     }
 
     const wallet = await Wallet.findOne({ user: userId });
-    if (!wallet || wallet.availableBalance < amount) {
+    if (!wallet) {
+      return res.status(400).json({ message: "No wallet found" });
+    }
+
+    // Earnings land in pendingBalance; only released earnings are withdrawable.
+    // Without this release step every mentor would be permanently blocked
+    // with a zero availableBalance regardless of how much they earned.
+    if (wallet.pendingBalance > 0) {
+      wallet.availableBalance += wallet.pendingBalance;
+      wallet.pendingBalance = 0;
+    }
+
+    if (wallet.availableBalance < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
     }
 

@@ -182,10 +182,18 @@ const MentorDashboard = () => {
             </div>
             <div className="mt-6 space-y-4">
               {createdCourses.length > 0 ? (createdCourses.slice(0, 4).map((course) => (
-                <Link key={course._id} to={`/course/${course._id}`} className="block rounded-3xl border border-slate-200 dark:border-slate-800 p-4 hover:border-indigo-300 dark:hover:border-indigo-500">
-                  <p className="font-semibold text-slate-900 dark:text-white">{course.title}</p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{course.category || course.level}</p>
-                </Link>
+                <div key={course._id} className="rounded-3xl border border-slate-200 dark:border-slate-800 p-4 hover:border-indigo-300 dark:hover:border-indigo-500">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{course.title}</p>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{course.category || course.level}</p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Link to={`/course/${course._id}`} className="text-xs text-indigo-600 hover:text-indigo-700">View</Link>
+                      <Link to={`/create-course?edit=${course._id}`} className="text-xs text-emerald-600 hover:text-emerald-700">Manage Lessons</Link>
+                    </div>
+                  </div>
+                </div>
               ))) : (
                 <p className="text-slate-500">No courses created yet. Start building one.</p>
               )}

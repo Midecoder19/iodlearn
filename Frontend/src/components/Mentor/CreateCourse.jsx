@@ -1,14 +1,16 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { courseAPI } from "../../utils/lmsApi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { BookOpen, Upload, DollarSign, Tag, AlignLeft } from "lucide-react";
+import { BookOpen, Upload, DollarSign, Tag, AlignLeft, Video, FileText } from "lucide-react";
+import LessonManager from "./LessonManager";
 
 const CreateCourse = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [createdCourse, setCreatedCourse] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -43,7 +45,7 @@ const CreateCourse = () => {
 
       const response = await courseAPI.create(courseData);
       toast.success("Course created successfully!");
-      navigate(`/course/${response.data.course._id}`);
+      setCreatedCourse(response.data.course);
     } catch (error) {
       console.error("Course creation error:", error);
       toast.error(error.response?.data?.error || "Failed to create course");
@@ -72,6 +74,52 @@ const CreateCourse = () => {
             You need an approved mentor account to create courses.
             {!user.isMentorApproved && user.role === "mentor" && " Your application is still under review."}
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (createdCourse) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <Video className="h-8 w-8 text-indigo-600 mr-3" />
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Manage Lessons</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Course: {createdCourse.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCreatedCourse(null)}
+                className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                Create another course
+              </button>
+            </div>
+            <LessonManager
+              courseId={createdCourse._id}
+              initialLessons={createdCourse.lessons || []}
+            />
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => navigate(`/course/${createdCourse._id}`)}
+                className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+              >
+                View Course
+              </button>
+              <button
+                onClick={() => setCreatedCourse(null)}
+                className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Create Another
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
